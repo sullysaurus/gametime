@@ -304,6 +304,28 @@ export default function AdminPage() {
     setSelectedReferenceImageUrl(null)
   }
 
+  async function handleRemoveGlobalReference(imageId: string) {
+    try {
+      // Update the image to remove is_global_reference flag
+      const { error } = await (supabase as any)
+        .from('generated_images')
+        .update({ is_global_reference: false })
+        .eq('id', imageId)
+
+      if (error) {
+        console.error('Error removing global reference:', error)
+        alert('Failed to remove reference image')
+        return
+      }
+
+      // Reload global references
+      await loadGlobalReferences()
+    } catch (err) {
+      console.error('Error removing global reference:', err)
+      alert('Failed to remove reference image')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -381,6 +403,7 @@ export default function AdminPage() {
                   globalReferences={globalReferences}
                   onClearReference={handleClearReference}
                   onSelectGlobalReference={handleUseAsReference}
+                  onRemoveGlobalReference={handleRemoveGlobalReference}
                 />
 
                 {/* Prompt Editor */}

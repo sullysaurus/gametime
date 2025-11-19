@@ -30,6 +30,7 @@ type Props = {
   globalReferences?: GlobalReference[]
   onClearReference?: () => void
   onSelectGlobalReference?: (imageUrl: string) => void
+  onRemoveGlobalReference?: (id: string) => void
 }
 
 type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
@@ -84,7 +85,7 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl, selectedReferenceImageUrl, globalReferences = [], onClearReference, onSelectGlobalReference }: Props) {
+export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl, selectedReferenceImageUrl, globalReferences = [], onClearReference, onSelectGlobalReference, onRemoveGlobalReference }: Props) {
   const [selectedModel, setSelectedModel] = useState<FluxModel>('flux-pro-1.1-ultra')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -267,25 +268,43 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
             {showGlobalRefs && (
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {globalReferences.map((ref) => (
-                  <button
+                  <div
                     key={ref.id}
-                    onClick={() => handleSelectGlobalReference(ref.image_url)}
-                    type="button"
                     className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-purple-600 hover:border-purple-400 transition-colors group"
                   >
-                    <Image
-                      src={ref.image_url}
-                      alt={`Global reference from ${ref.sections?.name || 'unknown'}`}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <div className="text-xs font-medium">{ref.sections?.name || 'Unknown Section'}</div>
-                        <div className="text-xs mt-1">{ref.model_name}</div>
+                    <button
+                      onClick={() => handleSelectGlobalReference(ref.image_url)}
+                      type="button"
+                      className="absolute inset-0 w-full h-full"
+                    >
+                      <Image
+                        src={ref.image_url}
+                        alt={`Global reference from ${ref.sections?.name || 'unknown'}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <div className="text-xs font-medium">{ref.sections?.name || 'Unknown Section'}</div>
+                          <div className="text-xs mt-1">{ref.model_name}</div>
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                    {onRemoveGlobalReference && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (confirm('Remove this global reference image?')) {
+                            onRemoveGlobalReference(ref.id)
+                          }
+                        }}
+                        type="button"
+                        className="absolute top-2 right-2 z-10 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs font-medium transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
