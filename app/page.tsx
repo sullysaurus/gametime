@@ -44,7 +44,6 @@ export default function HomePage() {
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
-  const [mapZoom, setMapZoom] = useState(1)
   const sliderRef = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -131,18 +130,6 @@ export default function HomePage() {
       const newScrollLeft = sliderRef.current.scrollLeft + (direction === 'right' ? scrollAmount : -scrollAmount)
       sliderRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' })
     }
-  }
-
-  function handleZoomIn() {
-    setMapZoom(prev => Math.min(prev + 0.2, 3))
-  }
-
-  function handleZoomOut() {
-    setMapZoom(prev => Math.max(prev - 0.2, 0.5))
-  }
-
-  function handleZoomReset() {
-    setMapZoom(1)
   }
 
   if (loading) {
@@ -524,45 +511,23 @@ export default function HomePage() {
 
         {/* Right Panel - Venue Map */}
         <div className="flex-1 relative bg-gray-900 overflow-hidden hidden md:block">
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-            <div
-              style={{
-                transform: `scale(${mapZoom})`,
-                transformOrigin: 'center center',
-                transition: 'transform 0.3s ease',
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <Image
-                src="/sections/map.png"
-                alt="Red Rocks Amphitheatre Map"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
+          <Image
+            src="/sections/map.png"
+            alt="Red Rocks Amphitheatre Map"
+            fill
+            className="object-cover"
+            priority
+          />
 
           {/* Zoom Controls */}
           <div className="absolute top-4 right-4 flex flex-col gap-1 bg-white rounded-lg shadow-xl overflow-hidden z-10">
-            <button
-              onClick={handleZoomIn}
-              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200"
-            >
+            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200">
               <span className="text-2xl text-gray-700 font-normal leading-none">+</span>
             </button>
-            <button
-              onClick={handleZoomOut}
-              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200"
-            >
+            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200">
               <span className="text-2xl text-gray-700 font-normal leading-none">−</span>
             </button>
-            <button
-              onClick={handleZoomReset}
-              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
-            >
+            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700">
                 <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
               </svg>
