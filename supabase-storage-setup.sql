@@ -12,26 +12,32 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Drop existing policies if they exist (for re-runs)
+DROP POLICY IF EXISTS "Public read access for generated images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
+DROP POLICY IF EXISTS "Anon users can upload images" ON storage.objects;
+DROP POLICY IF EXISTS "Service role can manage images" ON storage.objects;
+
 -- Policy: Public read access for all generated images
-CREATE POLICY IF NOT EXISTS "Public read access for generated images"
+CREATE POLICY "Public read access for generated images"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'generated-images');
 
 -- Policy: Authenticated users can upload images
-CREATE POLICY IF NOT EXISTS "Authenticated users can upload images"
+CREATE POLICY "Authenticated users can upload images"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'generated-images');
 
 -- Policy: Anon users can upload images (needed for API routes)
-CREATE POLICY IF NOT EXISTS "Anon users can upload images"
+CREATE POLICY "Anon users can upload images"
 ON storage.objects FOR INSERT
 TO anon
 WITH CHECK (bucket_id = 'generated-images');
 
 -- Policy: Service role can do anything
-CREATE POLICY IF NOT EXISTS "Service role can manage images"
+CREATE POLICY "Service role can manage images"
 ON storage.objects FOR ALL
 TO service_role
 USING (bucket_id = 'generated-images')
