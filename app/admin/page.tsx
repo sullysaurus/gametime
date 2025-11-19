@@ -99,20 +99,35 @@ function sortSectionsFrontToBack(sections: Section[]): Section[] {
 }
 
 export default function AdminPage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'generate' | 'prompts' | 'images'>('generate')
+
+  // Section state
   const [sections, setSections] = useState<Section[]>([])
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
+
+  // Prompt state
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
+  const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
+
+  // Image state
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
   const [allImages, setAllImages] = useState<GeneratedImage[]>([])
   const [globalReferences, setGlobalReferences] = useState<GeneratedImage[]>([])
+
+  // UI state
   const [showAllImages, setShowAllImages] = useState(true)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
+  const [imageFilter, setImageFilter] = useState<{section?: string; status?: string}>({})
+  const [promptFilter, setPromptFilter] = useState<{tag?: string; template?: boolean}>({})
 
   useEffect(() => {
     loadSections()
     loadGlobalReferences()
+    loadAllImages() // Load unified image library on mount
+    loadAllPrompts() // Load unified prompt library on mount
 
     // Check for section query parameter
     const urlParams = new URLSearchParams(window.location.search)
@@ -127,7 +142,7 @@ export default function AdminPage() {
     if (selectedSection) {
       loadActivePrompt()
       loadPendingImages()
-      loadAllImages()
+      // Don't reload all images here - they're already loaded globally
       // Load reference image URL
       const localPhoto = getLocalPhotoUrl(selectedSection.section_code)
       setReferenceImageUrl(localPhoto || selectedSection.current_image_url)
@@ -212,18 +227,32 @@ export default function AdminPage() {
   }
 
   async function loadAllImages() {
-    if (!selectedSection) return
-
+    // Load ALL images from ALL sections (unified library)
     const { data, error} = await supabase
       .from('generated_images')
-      .select('id, section_id, image_url, model_name, status, created_at')
-      .eq('section_id', selectedSection.id)
+      .select('id, section_id, image_url, model_name, status, created_at, sections(name, section_code)')
       .order('created_at', { ascending: false })
+      .limit(100) // Limit to recent 100 for performance
 
     if (error) {
       console.error('Error loading all images:', error)
     } else {
       setAllImages(data || [])
+    }
+  }
+
+  async function loadAllPrompts() {
+    // Load ALL prompts from ALL sections (unified library)
+    const { data, error } = await supabase
+      .from('prompts')
+      .select('id, section_id, prompt_text, negative_prompt, version, is_active, notes, created_at, tags, is_template, sections(name, section_code)')
+      .order('created_at', { ascending: false })
+      .limit(50) // Limit to recent 50 for performance
+
+    if (error) {
+      console.error('Error loading all prompts:', error)
+    } else {
+      setAllPrompts(data || [])
     }
   }
 
