@@ -108,7 +108,6 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
         sectionId: section.id,
         promptId: prompt.id,
         prompt: prompt.prompt_text,
-        negativePrompt: prompt.negative_prompt,
         model: selectedModel,
         provider: 'black-forest-labs',
         prompt_upsampling: promptUpsampling,

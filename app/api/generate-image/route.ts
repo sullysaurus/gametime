@@ -18,7 +18,6 @@ type GenerateImagePayload = {
   sectionId: string
   promptId: string
   prompt: string
-  negativePrompt?: string | null
   model?: FluxModel
   provider?: string
   // FLUX-specific parameters
@@ -165,7 +164,6 @@ export async function POST(request: NextRequest) {
       sectionId,
       promptId,
       prompt,
-      negativePrompt,
       model = 'flux-pro-1.1',
       provider = 'black-forest-labs',
       ...fluxParams
@@ -187,17 +185,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Combine prompt with negative prompt if provided
-    const fullPrompt = negativePrompt
-      ? `${prompt}\n\nAvoid: ${negativePrompt}`
-      : prompt
-
     console.log(`Generating image for section ${sectionId}, prompt ${promptId}`)
 
     // Generate image using BFL
     const imageUrl = await generateWithBFL({
       ...fluxParams,
-      prompt: fullPrompt,
+      prompt,
       model: model as FluxModel,
       provider,
       sectionId,
@@ -217,7 +210,6 @@ export async function POST(request: NextRequest) {
         generation_settings: {
           ...fluxParams,
           prompt,
-          negativePrompt,
           model,
         },
       } as any)
