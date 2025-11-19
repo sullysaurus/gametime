@@ -420,13 +420,13 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* All Generated Images */}
+                {/* All Generated Images - Unified Library */}
                 <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h2 className="text-xl font-semibold">Image History - Pick Any as Reference</h2>
+                      <h2 className="text-xl font-semibold">🎨 Unified Image Library</h2>
                       <p className="text-sm text-gray-400 mt-1">
-                        Click "Use as Reference" on any image to use it for the next generation
+                        All images from all sections - Click "Use as Reference" on any image
                       </p>
                     </div>
                     <button
@@ -441,20 +441,27 @@ export default function AdminPage() {
                     <div className="space-y-4 mt-4">
                       {allImages.length === 0 ? (
                         <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
-                          <p className="text-gray-400 mb-2">No images generated yet for this section.</p>
+                          <p className="text-gray-400 mb-2">No images generated yet.</p>
                           <p className="text-sm text-gray-500">Generate your first image above to get started!</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {allImages.map((image) => (
-                            <div key={image.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                          {allImages.map((image: any) => (
+                            <div key={image.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
                               <div className="relative aspect-video bg-gray-900">
                                 <Image
                                   src={image.image_url}
-                                  alt={`Generated ${selectedSection.name}`}
+                                  alt={`Generated image`}
                                   fill
                                   className="object-cover"
+                                  unoptimized={image.image_url.startsWith('data:')}
                                 />
+                                {/* Section Badge */}
+                                <div className="absolute top-2 left-2">
+                                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                                    {image.sections?.section_code || 'Unknown'}
+                                  </span>
+                                </div>
                               </div>
                               <div className="p-3 space-y-2">
                                 <div className="flex items-center justify-between">
@@ -469,7 +476,7 @@ export default function AdminPage() {
                                     {new Date(image.created_at).toLocaleDateString()}
                                   </span>
                                 </div>
-                                <div className="text-xs text-gray-400">
+                                <div className="text-xs text-gray-400 truncate" title={image.model_name}>
                                   {image.model_name}
                                 </div>
                                 <button
