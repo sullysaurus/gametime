@@ -357,6 +357,7 @@ export default function AdminPage() {
                 <SectionImageManager
                   section={selectedSection}
                   onPrimaryImageChange={handleSectionImageChange}
+                  onGlobalReferenceAdded={loadGlobalReferences}
                 />
 
                 {/* Pending Images */}

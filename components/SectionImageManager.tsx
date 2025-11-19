@@ -14,6 +14,7 @@ type Section = {
 type Props = {
   section: Section
   onPrimaryImageChange: (newUrl: string | null) => void
+  onGlobalReferenceAdded?: () => void
 }
 
 type ApprovedImage = {
@@ -26,6 +27,7 @@ type ApprovedImage = {
 export default function SectionImageManager({
   section,
   onPrimaryImageChange,
+  onGlobalReferenceAdded,
 }: Props) {
   const [approvedImages, setApprovedImages] = useState<ApprovedImage[]>([])
   const [loading, setLoading] = useState(false)
@@ -87,6 +89,49 @@ export default function SectionImageManager({
     }
   }
 
+  async function handlePinAsGlobalReference() {
+    if (!section.current_image_url) {
+      alert('No primary image to pin')
+      return
+    }
+
+    if (!confirm('Pin this image as a global reference? It will be available across all sections.')) {
+      return
+    }
+
+    try {
+      // Import this image into generated_images table with global reference flag
+      const { error } = await (supabase as any)
+        .from('generated_images')
+        .insert({
+          section_id: section.id,
+          prompt_id: null,
+          image_url: section.current_image_url,
+          model_name: 'uploaded',
+          model_provider: 'manual',
+          status: 'approved',
+          is_global_reference: true,
+          generation_settings: {
+            note: 'Imported from primary image',
+            section: section.name,
+            section_code: section.section_code,
+          },
+        })
+
+      if (error) throw error
+
+      alert('Image pinned as global reference! You can now use it across all sections.')
+
+      // Refresh global references in parent component
+      if (onGlobalReferenceAdded) {
+        onGlobalReferenceAdded()
+      }
+    } catch (error) {
+      console.error('Error pinning as global reference:', error)
+      alert('Failed to pin as global reference')
+    }
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -138,12 +183,20 @@ export default function SectionImageManager({
                 fill
                 className="object-cover"
               />
-              <button
-                onClick={handleRemovePrimaryImage}
-                className="absolute top-2 right-2 px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors"
-              >
-                Remove
-              </button>
+              <div className="absolute top-2 right-2 flex gap-2">
+                <button
+                  onClick={handlePinAsGlobalReference}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition-colors"
+                >
+                  📌 Pin Globally
+                </button>
+                <button
+                  onClick={handleRemovePrimaryImage}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
             </>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
