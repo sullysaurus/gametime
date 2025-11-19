@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all base64 images
-    const { data: base64Images, error: fetchError } = await supabase
+    const { data: base64Images, error: fetchError } = await (supabase as any)
       .from('generated_images')
       .select('id, image_url, section_id, model_name')
       .like('image_url', 'data:%')
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         console.log(`Image ${image.id} uploaded successfully: ${publicUrl}`)
 
         // Update database with new URL
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('generated_images')
           .update({ image_url: publicUrl })
           .eq('id', image.id)
@@ -143,14 +143,14 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // Count base64 vs storage images
-    const { data: allImages, error } = await supabase
+    const { data: allImages, error } = await (supabase as any)
       .from('generated_images')
       .select('image_url')
 
     if (error) throw error
 
-    const base64Count = allImages?.filter(img => img.image_url.startsWith('data:')).length || 0
-    const storageCount = allImages?.filter(img => img.image_url.startsWith('https:')).length || 0
+    const base64Count = allImages?.filter((img: any) => img.image_url.startsWith('data:')).length || 0
+    const storageCount = allImages?.filter((img: any) => img.image_url.startsWith('https:')).length || 0
     const totalCount = allImages?.length || 0
 
     return NextResponse.json({

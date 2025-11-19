@@ -117,6 +117,7 @@ export default function AdminPage() {
 
   // UI state
   const [showAllImages, setShowAllImages] = useState(true)
+  const [showAllPrompts, setShowAllPrompts] = useState(false)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
@@ -419,6 +420,142 @@ export default function AdminPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Unified Prompt Library */}
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-xl font-semibold">📝 Unified Prompt Library</h2>
+                      <p className="text-sm text-gray-400 mt-1">
+                        All prompts from all sections - Find successful prompts to reuse
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const showPrompts = !showAllPrompts
+                        setShowAllPrompts(showPrompts)
+                      }}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+                    >
+                      {showAllPrompts ? 'Hide' : `Show (${allPrompts.length})`}
+                    </button>
+                  </div>
+
+                  {showAllPrompts && (
+                    <div className="space-y-4 mt-4">
+                      {allPrompts.length === 0 ? (
+                        <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
+                          <p className="text-gray-400 mb-2">No prompts found.</p>
+                          <p className="text-sm text-gray-500">Edit a prompt above to get started!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {allPrompts.map((prompt: any) => (
+                            <div key={prompt.id} className="bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors p-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  {/* Section Badge & Template Indicator */}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                                      {prompt.sections?.section_code || 'Unknown'}
+                                    </span>
+                                    {prompt.is_template && (
+                                      <span className="px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded">
+                                        📋 Template
+                                      </span>
+                                    )}
+                                    {prompt.is_active && (
+                                      <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded">
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Prompt Text */}
+                                  <p className="text-sm text-gray-300 line-clamp-2 mb-2">
+                                    {prompt.prompt_text}
+                                  </p>
+
+                                  {/* Tags */}
+                                  {prompt.tags && prompt.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {prompt.tags.map((tag: string, idx: number) => (
+                                        <span key={idx} className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded">
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Metadata */}
+                                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                                    <span>v{prompt.version}</span>
+                                    <span>•</span>
+                                    <span>{new Date(prompt.created_at).toLocaleDateString()}</span>
+                                    {prompt.notes && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="truncate max-w-xs" title={prompt.notes}>
+                                          {prompt.notes}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Action Button */}
+                                <button
+                                  onClick={async () => {
+                                    if (!selectedSection) return
+
+                                    // Create a new prompt version for the current section using this prompt text
+                                    const { data: newPrompt, error } = await (supabase as any)
+                                      .from('prompts')
+                                      .insert({
+                                        section_id: selectedSection.id,
+                                        prompt_text: prompt.prompt_text,
+                                        negative_prompt: prompt.negative_prompt,
+                                        version: (activePrompt?.version || 0) + 1,
+                                        is_active: true,
+                                        notes: `Copied from ${prompt.sections?.section_code || 'another section'}`,
+                                        tags: prompt.tags,
+                                        is_template: false
+                                      })
+                                      .select()
+                                      .single()
+
+                                    if (error) {
+                                      console.error('Error copying prompt:', error)
+                                      alert('Failed to copy prompt')
+                                      return
+                                    }
+
+                                    // Deactivate old prompt
+                                    if (activePrompt) {
+                                      await (supabase as any)
+                                        .from('prompts')
+                                        .update({ is_active: false })
+                                        .eq('id', activePrompt.id)
+                                    }
+
+                                    // Update UI
+                                    await loadActivePrompt()
+                                    await loadAllPrompts()
+                                    alert('Prompt copied to current section!')
+                                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                                  }}
+                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
+                                >
+                                  Use for {selectedSection?.section_code}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* All Generated Images - Unified Library */}
                 <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
