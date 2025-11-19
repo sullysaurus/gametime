@@ -21,9 +21,19 @@ type Props = {
   referenceImageUrl?: string | null
 }
 
-type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev'
+type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro'
 
 const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
+  {
+    id: 'flux-kontext-max',
+    name: 'FLUX.1 Kontext [max]',
+    description: 'Maximum quality with advanced text-to-image and editing capabilities',
+  },
+  {
+    id: 'flux-kontext-pro',
+    name: 'FLUX.1 Kontext [pro]',
+    description: 'Professional quality with advanced text-to-image generation',
+  },
   {
     id: 'flux-pro-1.1-ultra',
     name: 'FLUX 1.1 Pro Ultra',
@@ -85,7 +95,9 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
   const [guidance, setGuidance] = useState(3.5)
 
   const isUltra = selectedModel === 'flux-pro-1.1-ultra'
+  const isKontext = selectedModel === 'flux-kontext-max' || selectedModel === 'flux-kontext-pro'
   const isDev = selectedModel === 'flux-dev'
+  const usesAspectRatio = isUltra || isKontext
 
   async function handleGenerate() {
     setGenerating(true)
@@ -112,13 +124,17 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
         }
       }
 
-      // Ultra model parameters
-      if (isUltra) {
+      // Ultra and Kontext model parameters
+      if (usesAspectRatio) {
         requestBody.aspect_ratio = aspectRatio
-        requestBody.raw = raw
 
-        // Add image prompt if reference image exists
-        if (referenceImageUrl) {
+        // Ultra-specific features
+        if (isUltra) {
+          requestBody.raw = raw
+        }
+
+        // Add image prompt if reference image exists (Ultra only)
+        if (isUltra && referenceImageUrl) {
           // Fetch and convert reference image to base64
           const imageResponse = await fetch(referenceImageUrl)
           const blob = await imageResponse.blob()
@@ -225,7 +241,7 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
 
         {/* Dimensions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {isUltra ? (
+          {usesAspectRatio ? (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Aspect Ratio
@@ -242,7 +258,9 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-gray-500">Ultra model uses aspect ratios instead of exact dimensions</p>
+              <p className="mt-1 text-xs text-gray-500">
+                {isKontext ? 'Kontext models' : 'Ultra model'} use aspect ratios instead of exact dimensions
+              </p>
             </div>
           ) : (
             <>

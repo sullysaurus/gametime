@@ -11,6 +11,8 @@ type FluxModel =
   | 'flux-pro-1.1'
   | 'flux-pro'
   | 'flux-dev'
+  | 'flux-kontext-max'
+  | 'flux-kontext-pro'
 
 type GenerateImagePayload = {
   sectionId: string
@@ -44,6 +46,7 @@ function getAspectRatio(width: number, height: number): string {
 async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
   const model = payload.model || 'flux-pro-1.1'
   const isUltra = model === 'flux-pro-1.1-ultra'
+  const isKontext = model === 'flux-kontext-max' || model === 'flux-kontext-pro'
 
   // Build request body based on model
   const requestBody: Record<string, any> = {
@@ -58,21 +61,23 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
     requestBody.seed = payload.seed
   }
 
-  // Ultra model uses aspect_ratio, others use width/height
-  if (isUltra) {
+  // Ultra and Kontext models use aspect_ratio, others use width/height
+  if (isUltra || isKontext) {
     requestBody.aspect_ratio = payload.aspect_ratio || getAspectRatio(
       payload.width || 1024,
       payload.height || 1024
     )
 
     // Ultra-specific features
-    if (payload.raw !== undefined) {
-      requestBody.raw = payload.raw
-    }
+    if (isUltra) {
+      if (payload.raw !== undefined) {
+        requestBody.raw = payload.raw
+      }
 
-    if (payload.image_prompt) {
-      requestBody.image_prompt = payload.image_prompt
-      requestBody.image_prompt_strength = payload.image_prompt_strength ?? 0.1
+      if (payload.image_prompt) {
+        requestBody.image_prompt = payload.image_prompt
+        requestBody.image_prompt_strength = payload.image_prompt_strength ?? 0.1
+      }
     }
   } else {
     requestBody.width = payload.width || 1024
