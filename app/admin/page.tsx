@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 import ImageGenerator from '@/components/ImageGenerator'
 import ImageComparison from '@/components/ImageComparison'
 import PromptEditor from '@/components/PromptEditor'
@@ -192,10 +193,21 @@ export default function AdminPage() {
       {/* Header */}
       <div className="border-b border-gray-800 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Red Rocks AI Image Generator</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            Generate, compare, and manage concert venue images
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Red Rocks AI Image Generator</h1>
+              <p className="text-gray-400 text-sm mt-1">
+                Generate, compare, and manage concert venue images
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+            >
+              <span>←</span>
+              <span>Back to Home</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -228,6 +240,14 @@ export default function AdminPage() {
           <div className="lg:col-span-3 space-y-6">
             {selectedSection && activePrompt && (
               <>
+                {/* Image Generator */}
+                <ImageGenerator
+                  section={selectedSection}
+                  prompt={activePrompt}
+                  onImageGenerated={handleImageGenerated}
+                  referenceImageUrl={referenceImageUrl}
+                />
+
                 {/* Prompt Editor */}
                 <PromptEditor
                   section={selectedSection}
@@ -238,14 +258,6 @@ export default function AdminPage() {
                 <SectionImageManager
                   section={selectedSection}
                   onPrimaryImageChange={handleSectionImageChange}
-                />
-
-                {/* Image Generator */}
-                <ImageGenerator
-                  section={selectedSection}
-                  prompt={activePrompt}
-                  onImageGenerated={handleImageGenerated}
-                  referenceImageUrl={referenceImageUrl}
                 />
 
                 {/* Pending Images */}
