@@ -14,13 +14,22 @@ type Prompt = {
   negative_prompt: string | null
 }
 
+type GlobalReference = {
+  id: string
+  image_url: string
+  model_name: string
+  sections?: { name: string; section_code: string }
+}
+
 type Props = {
   section: Section
   prompt: Prompt
   onImageGenerated: () => void
   referenceImageUrl?: string | null
   selectedReferenceImageUrl?: string | null
+  globalReferences?: GlobalReference[]
   onClearReference?: () => void
+  onSelectGlobalReference?: (imageUrl: string) => void
 }
 
 type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
@@ -75,10 +84,11 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl, selectedReferenceImageUrl, onClearReference }: Props) {
-  const [selectedModel, setSelectedModel] = useState<FluxModel>('flux-pro-1.1')
+export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl, selectedReferenceImageUrl, globalReferences = [], onClearReference, onSelectGlobalReference }: Props) {
+  const [selectedModel, setSelectedModel] = useState<FluxModel>('flux-pro-1.1-ultra')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showGlobalRefs, setShowGlobalRefs] = useState(false)
 
   // Dimensions (for non-Ultra models)
   const [width, setWidth] = useState(1024)
@@ -109,6 +119,13 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
   // Determine which reference image to use (prioritize selected over default)
   const activeReferenceImageUrl = selectedReferenceImageUrl || referenceImageUrl
   const supportsReferenceImage = isUltra || isKontext
+
+  function handleSelectGlobalReference(imageUrl: string) {
+    if (onSelectGlobalReference) {
+      onSelectGlobalReference(imageUrl)
+    }
+    setShowGlobalRefs(false)
+  }
 
   async function handleGenerate() {
     setGenerating(true)
@@ -232,6 +249,45 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
             {FLUX_MODELS.find((m) => m.id === selectedModel)?.description}
           </p>
         </div>
+
+        {/* Global References Selector */}
+        {globalReferences.length > 0 && supportsReferenceImage && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <button
+              onClick={() => setShowGlobalRefs(!showGlobalRefs)}
+              type="button"
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-300 hover:text-white transition-colors"
+            >
+              <span>📌 Pinned Global References ({globalReferences.length})</span>
+              <span>{showGlobalRefs ? '▼' : '▶'}</span>
+            </button>
+            {showGlobalRefs && (
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {globalReferences.map((ref) => (
+                  <button
+                    key={ref.id}
+                    onClick={() => handleSelectGlobalReference(ref.image_url)}
+                    type="button"
+                    className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-purple-600 hover:border-purple-400 transition-colors group"
+                  >
+                    <Image
+                      src={ref.image_url}
+                      alt={`Global reference from ${ref.sections?.name || 'unknown'}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <div className="text-xs font-medium">{ref.sections?.name || 'Unknown Section'}</div>
+                        <div className="text-xs mt-1">{ref.model_name}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Reference Image Preview (for Ultra and Kontext) */}
         {supportsReferenceImage && activeReferenceImageUrl && (

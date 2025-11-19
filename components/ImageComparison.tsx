@@ -16,6 +16,7 @@ type GeneratedImage = {
   model_provider: string
   generation_settings: any
   created_at: string
+  is_global_reference: boolean
 }
 
 type Props = {
@@ -33,6 +34,7 @@ export default function ImageComparison({
 }: Props) {
   const [notes, setNotes] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [isGlobalRef, setIsGlobalRef] = useState(generatedImage.is_global_reference)
 
   async function handleStatusUpdate(status: 'approved' | 'rejected') {
     setUpdating(true)
@@ -60,6 +62,37 @@ export default function ImageComparison({
     } catch (error: any) {
       console.error('Status update error:', error)
       alert(error.message || 'Failed to update status')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function handleToggleGlobalReference() {
+    const newValue = !isGlobalRef
+    setUpdating(true)
+    try {
+      const response = await fetch(
+        `/api/images/${generatedImage.id}/global-reference`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            is_global_reference: newValue,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update global reference')
+      }
+
+      setIsGlobalRef(newValue)
+    } catch (error: any) {
+      console.error('Global reference update error:', error)
+      alert(error.message || 'Failed to update global reference')
     } finally {
       setUpdating(false)
     }
@@ -153,20 +186,38 @@ export default function ImageComparison({
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        {onUseAsReference && (
+        <div className="flex gap-3">
+          {onUseAsReference && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onUseAsReference(generatedImage.image_url)
+              }}
+              disabled={updating}
+              type="button"
+              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+            >
+              🎨 Use as Reference
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onUseAsReference(generatedImage.image_url)
+              handleToggleGlobalReference()
             }}
             disabled={updating}
             type="button"
-            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+            className={`flex-1 px-6 py-3 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors ${
+              isGlobalRef
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
           >
-            🎨 Use as Reference for Next Generation
+            {isGlobalRef ? '📌 Pinned Globally' : '📌 Pin Globally'}
           </button>
-        )}
+        </div>
         <div className="flex gap-3">
           <button
             onClick={(e) => {

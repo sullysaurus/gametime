@@ -44,6 +44,7 @@ type GeneratedImage = {
   generation_settings: any
   comparison_notes: string | null
   created_at: string
+  is_global_reference: boolean
 }
 
 // Map section codes to local photos
@@ -66,6 +67,7 @@ export default function AdminPage() {
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
   const [allImages, setAllImages] = useState<GeneratedImage[]>([])
+  const [globalReferences, setGlobalReferences] = useState<GeneratedImage[]>([])
   const [showAllImages, setShowAllImages] = useState(false)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
@@ -73,6 +75,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadSections()
+    loadGlobalReferences()
 
     // Check for section query parameter
     const urlParams = new URLSearchParams(window.location.search)
@@ -173,7 +176,7 @@ export default function AdminPage() {
   async function loadAllImages() {
     if (!selectedSection) return
 
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('generated_images')
       .select('*')
       .eq('section_id', selectedSection.id)
@@ -183,6 +186,20 @@ export default function AdminPage() {
       console.error('Error loading all images:', error)
     } else {
       setAllImages(data || [])
+    }
+  }
+
+  async function loadGlobalReferences() {
+    const { data, error } = await supabase
+      .from('generated_images')
+      .select('*, sections(name, section_code)')
+      .eq('is_global_reference', true)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error loading global references:', error)
+    } else {
+      setGlobalReferences(data || [])
     }
   }
 
@@ -198,6 +215,7 @@ export default function AdminPage() {
   async function handleImageStatusChange() {
     await loadPendingImages()
     await loadAllImages()
+    await loadGlobalReferences()
     await loadSections()
   }
 
@@ -284,7 +302,9 @@ export default function AdminPage() {
                   onImageGenerated={handleImageGenerated}
                   referenceImageUrl={referenceImageUrl}
                   selectedReferenceImageUrl={selectedReferenceImageUrl}
+                  globalReferences={globalReferences}
                   onClearReference={handleClearReference}
+                  onSelectGlobalReference={handleUseAsReference}
                 />
 
                 {/* Prompt Editor */}
