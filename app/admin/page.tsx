@@ -273,6 +273,7 @@ export default function AdminPage() {
 
   async function handlePromptUpdate(updatedPrompt: Prompt) {
     setActivePrompt(updatedPrompt)
+    await loadAllPrompts() // Refresh unified prompt library
   }
 
   async function handleImageGenerated() {
@@ -323,6 +324,28 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Error removing global reference:', err)
       alert('Failed to remove reference image')
+    }
+  }
+
+  async function handleDeletePrompt(promptId: string) {
+    try {
+      // Delete the prompt from the database
+      const { error } = await (supabase as any)
+        .from('prompts')
+        .delete()
+        .eq('id', promptId)
+
+      if (error) {
+        console.error('Error deleting prompt:', error)
+        alert('Failed to delete prompt')
+        return
+      }
+
+      // Reload all prompts to refresh the library
+      await loadAllPrompts()
+    } catch (err) {
+      console.error('Error deleting prompt:', err)
+      alert('Failed to delete prompt')
     }
   }
 
@@ -526,51 +549,63 @@ export default function AdminPage() {
                                   </div>
                                 </div>
 
-                                {/* Action Button */}
-                                <button
-                                  onClick={async () => {
-                                    if (!selectedSection) return
+                                {/* Action Buttons */}
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={async () => {
+                                      if (!selectedSection) return
 
-                                    // Create a new prompt version for the current section using this prompt text
-                                    const { data: newPrompt, error } = await (supabase as any)
-                                      .from('prompts')
-                                      .insert({
-                                        section_id: selectedSection.id,
-                                        prompt_text: prompt.prompt_text,
-                                        negative_prompt: prompt.negative_prompt,
-                                        version: (activePrompt?.version || 0) + 1,
-                                        is_active: true,
-                                        notes: `Copied from ${prompt.sections?.section_code || 'another section'}`,
-                                        tags: prompt.tags,
-                                        is_template: false
-                                      })
-                                      .select()
-                                      .single()
-
-                                    if (error) {
-                                      console.error('Error copying prompt:', error)
-                                      alert('Failed to copy prompt')
-                                      return
-                                    }
-
-                                    // Deactivate old prompt
-                                    if (activePrompt) {
-                                      await (supabase as any)
+                                      // Create a new prompt version for the current section using this prompt text
+                                      const { data: newPrompt, error } = await (supabase as any)
                                         .from('prompts')
-                                        .update({ is_active: false })
-                                        .eq('id', activePrompt.id)
-                                    }
+                                        .insert({
+                                          section_id: selectedSection.id,
+                                          prompt_text: prompt.prompt_text,
+                                          negative_prompt: prompt.negative_prompt,
+                                          version: (activePrompt?.version || 0) + 1,
+                                          is_active: true,
+                                          notes: `Copied from ${prompt.sections?.section_code || 'another section'}`,
+                                          tags: prompt.tags,
+                                          is_template: false
+                                        })
+                                        .select()
+                                        .single()
 
-                                    // Update UI
-                                    await loadActivePrompt()
-                                    await loadAllPrompts()
-                                    alert('Prompt copied to current section!')
-                                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                                  }}
-                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
-                                >
-                                  Use for {selectedSection?.section_code}
-                                </button>
+                                      if (error) {
+                                        console.error('Error copying prompt:', error)
+                                        alert('Failed to copy prompt')
+                                        return
+                                      }
+
+                                      // Deactivate old prompt
+                                      if (activePrompt) {
+                                        await (supabase as any)
+                                          .from('prompts')
+                                          .update({ is_active: false })
+                                          .eq('id', activePrompt.id)
+                                      }
+
+                                      // Update UI
+                                      await loadActivePrompt()
+                                      await loadAllPrompts()
+                                      alert('Prompt copied to current section!')
+                                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                                    }}
+                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
+                                  >
+                                    Use for {selectedSection?.section_code}
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('Delete this prompt? This cannot be undone.')) {
+                                        await handleDeletePrompt(prompt.id)
+                                      }
+                                    }}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
