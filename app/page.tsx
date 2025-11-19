@@ -42,11 +42,11 @@ export default function HomePage() {
   function getLocalPhotoUrl(sectionCode: string): string | null {
     const mapping: Record<string, string> = {
       'BL': '/sections/back-left.jpeg',
-      'BCL': '/sections/back-left-center.jpeg',
-      'BCR': '/sections/back-right-center.jpeg',
+      'BLC': '/sections/back-left-center.jpeg',
+      'BRC': '/sections/back-right-center.jpeg',
       'BR': '/sections/back-right.jpeg',
-      'GA1': '/sections/general-admission.jpeg',
-      'GA2': '/sections/general-admission.jpeg',
+      'Pit GA': '/sections/general-admission.jpeg',
+      'Seating GA': '/sections/general-admission.jpeg',
       'SRO': '/sections/general-admission.jpeg',
     }
     return mapping[sectionCode] || null
@@ -456,7 +456,7 @@ export default function HomePage() {
               <p className="text-sm text-gray-400 mb-4">Red Rocks Amphitheatre</p>
 
               {/* Large Image */}
-              <div className="relative aspect-video bg-gray-800 rounded-lg overflow-hidden mb-4">
+              <div className="relative w-full aspect-video min-h-[200px] bg-gray-800 rounded-lg overflow-hidden mb-4">
                 {selectedSection.display_image_url ? (
                   <Image
                     src={selectedSection.display_image_url}
@@ -465,7 +465,6 @@ export default function HomePage() {
                     className="object-cover"
                     unoptimized={selectedSection.display_image_url.startsWith('data:')}
                     sizes="(max-width: 768px) 100vw, 600px"
-                    priority
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-600">

@@ -53,11 +53,11 @@ type GeneratedImage = {
 function getLocalPhotoUrl(sectionCode: string): string | null {
   const mapping: Record<string, string> = {
     'BL': '/sections/back-left.jpeg',
-    'BCL': '/sections/back-left-center.jpeg',
-    'BCR': '/sections/back-right-center.jpeg',
+    'BLC': '/sections/back-left-center.jpeg',
+    'BRC': '/sections/back-right-center.jpeg',
     'BR': '/sections/back-right.jpeg',
-    'GA1': '/sections/general-admission.jpeg',
-    'GA2': '/sections/general-admission.jpeg',
+    'Pit GA': '/sections/general-admission.jpeg',
+    'Seating GA': '/sections/general-admission.jpeg',
     'SRO': '/sections/general-admission.jpeg',
   }
   return mapping[sectionCode] || null
@@ -66,16 +66,22 @@ function getLocalPhotoUrl(sectionCode: string): string | null {
 // Sort sections from front to back
 function sortSectionsFrontToBack(sections: Section[]): Section[] {
   // Define sort priority: lower numbers = closer to front
+  // Order: Pit GA → FC → FR → FL → MR → MRC → MLC → ML → BR → BRC → BLC → BL → Seating GA → SRO
   const sectionPriority: Record<string, number> = {
-    // Reserved rows (front to back by row number)
-    // General admission and back sections last
-    'BL': 900,
-    'BCL': 901,
-    'BCR': 902,
-    'BR': 903,
-    'GA1': 1000,
-    'GA2': 1001,
-    'SRO': 1002,
+    'Pit GA': 1,
+    'FC': 2,
+    'FR': 3,
+    'FL': 4,
+    'MR': 5,
+    'MRC': 6,
+    'MLC': 7,
+    'ML': 8,
+    'BR': 9,
+    'BRC': 10,
+    'BLC': 11,
+    'BL': 12,
+    'Seating GA': 13,
+    'SRO': 14,
   }
 
   return sections.sort((a, b) => {
