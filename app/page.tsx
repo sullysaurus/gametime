@@ -7,23 +7,11 @@ import Image from 'next/image'
 
 type GeneratedImage = {
   id: string
+  section_id: string
   image_url: string
   status: 'pending' | 'approved' | 'rejected'
   approved_at: string | null
   created_at: string
-}
-
-type SectionRecord = {
-  id: string
-  name: string
-  section_code: string
-  category: string
-  current_image_url: string | null
-  row_info: string | null
-  price: number
-  deal_badge: string | null
-  value_badge: string | null
-  generated_images?: GeneratedImage[]
 }
 
 type Section = {
@@ -65,32 +53,58 @@ export default function HomePage() {
   }
 
   async function loadSections() {
-    const { data, error } = await supabase
+    // Fetch sections without generated_images to reduce initial payload
+    const { data: sectionsData, error: sectionsError } = await supabase
       .from('sections')
-      .select('*, generated_images(id, image_url, status, approved_at, created_at)')
+      .select('id, name, section_code, category, current_image_url, row_info, price, deal_badge, value_badge')
       .order('price', { ascending: false })
-      .order('approved_at', { ascending: false, foreignTable: 'generated_images' })
 
-    if (error) {
-      console.error('Error loading sections:', error)
+    if (sectionsError) {
+      console.error('Error loading sections:', sectionsError)
       setLoading(false)
       return
     }
 
-    const list = (data || []) as SectionRecord[]
-    const hydrated: Section[] = list.map((section) => {
-      const images: GeneratedImage[] = section.generated_images || []
-      const approved = images
-        .filter((img) => img.status === 'approved')
-        .sort((a, b) => {
-          const aTime = new Date(a.approved_at || a.created_at).getTime()
-          const bTime = new Date(b.approved_at || b.created_at).getTime()
-          return bTime - aTime
-        })
-      const pending = images
-        .filter((img) => img.status === 'pending')
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    if (!sectionsData) {
+      setLoading(false)
+      return
+    }
 
+    // Fetch only the most recent approved image per section (much lighter query)
+    const { data: approvedImages } = await supabase
+      .from('generated_images')
+      .select('section_id, image_url, status, approved_at, created_at')
+      .eq('status', 'approved')
+      .order('approved_at', { ascending: false })
+
+    // Fetch only the most recent pending image per section
+    const { data: pendingImages } = await supabase
+      .from('generated_images')
+      .select('section_id, image_url, status, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+
+    // Create a map of section_id to most recent images
+    const approvedMap = new Map<string, any>()
+    const pendingMap = new Map<string, any>()
+
+    if (approvedImages) {
+      approvedImages.forEach((img: any) => {
+        if (!approvedMap.has(img.section_id)) {
+          approvedMap.set(img.section_id, img)
+        }
+      })
+    }
+
+    if (pendingImages) {
+      pendingImages.forEach((img: any) => {
+        if (!pendingMap.has(img.section_id)) {
+          pendingMap.set(img.section_id, img)
+        }
+      })
+    }
+
+    const hydrated: Section[] = (sectionsData || []).map((section: any) => {
       // Priority: approved AI images > pending AI images > local photos > current_image_url
       let displayImageUrl: string | null = section.current_image_url
       let displayImageStatus: Section['display_image_status'] = 'current'
@@ -101,18 +115,19 @@ export default function HomePage() {
         displayImageStatus = 'current'
       }
 
-      if (approved.length > 0) {
-        displayImageUrl = approved[0].image_url
+      const approved = approvedMap.get(section.id)
+      const pending = pendingMap.get(section.id)
+
+      if (approved) {
+        displayImageUrl = approved.image_url
         displayImageStatus = 'approved'
-      } else if (pending.length > 0) {
-        displayImageUrl = pending[0].image_url
+      } else if (pending) {
+        displayImageUrl = pending.image_url
         displayImageStatus = 'pending'
       }
 
-      const { generated_images, ...rest } = section
-
       return {
-        ...rest,
+        ...section,
         display_image_url: displayImageUrl,
         display_image_status: displayImageStatus,
       }
@@ -275,7 +290,7 @@ export default function HomePage() {
             {/* Horizontal Scrolling Cards */}
             <div ref={sliderRef} className="overflow-x-auto scrollbar-hide -mx-3 md:-mx-4 px-3 md:px-4">
               <div className="flex gap-2 md:gap-3 pb-2">
-                {sections.slice(0, 6).map((section) => (
+                {sections.slice(0, 6).map((section, index) => (
                   <div
                     key={`slider-${section.id}`}
                     onClick={() => setSelectedSection(section)}
@@ -289,6 +304,8 @@ export default function HomePage() {
                           alt={section.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading={index < 3 ? 'eager' : 'lazy'}
+                          priority={index < 2}
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gray-800" />
@@ -343,7 +360,7 @@ export default function HomePage() {
           {/* Ticket Cards */}
           <div className="p-3 md:p-4">
             <div className="space-y-2 md:space-y-3">
-              {sections.map((section) => (
+              {sections.map((section, index) => (
                 <div
                   key={section.id}
                   onClick={() => setSelectedSection(section)}
@@ -357,6 +374,7 @@ export default function HomePage() {
                         alt={section.name}
                         fill
                         className="object-cover"
+                        loading={index < 4 ? 'eager' : 'lazy'}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-xs">
