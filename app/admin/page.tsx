@@ -70,7 +70,7 @@ export default function AdminPage() {
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
   const [allImages, setAllImages] = useState<GeneratedImage[]>([])
   const [globalReferences, setGlobalReferences] = useState<GeneratedImage[]>([])
-  const [showAllImages, setShowAllImages] = useState(false)
+  const [showAllImages, setShowAllImages] = useState(true)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
@@ -355,19 +355,27 @@ export default function AdminPage() {
                 {/* All Generated Images */}
                 <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Image History</h2>
+                    <div>
+                      <h2 className="text-xl font-semibold">Image History - Pick Any as Reference</h2>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Click "Use as Reference" on any image to use it for the next generation
+                      </p>
+                    </div>
                     <button
                       onClick={() => setShowAllImages(!showAllImages)}
                       className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
                     >
-                      {showAllImages ? 'Hide History' : `Show All Images (${allImages.length})`}
+                      {showAllImages ? 'Hide' : `Show (${allImages.length})`}
                     </button>
                   </div>
 
                   {showAllImages && (
                     <div className="space-y-4 mt-4">
                       {allImages.length === 0 ? (
-                        <p className="text-gray-400 text-center py-4">No images generated yet.</p>
+                        <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
+                          <p className="text-gray-400 mb-2">No images generated yet for this section.</p>
+                          <p className="text-sm text-gray-500">Generate your first image above to get started!</p>
+                        </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                           {allImages.map((image) => (
