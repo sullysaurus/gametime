@@ -21,7 +21,7 @@ type Props = {
   referenceImageUrl?: string | null
 }
 
-type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro'
+type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
 
 const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
   {
@@ -33,6 +33,11 @@ const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
     id: 'flux-kontext-pro',
     name: 'FLUX.1 Kontext [pro]',
     description: 'Professional quality with advanced text-to-image generation',
+  },
+  {
+    id: 'flux-kontext-dev',
+    name: 'FLUX.1 Kontext [dev]',
+    description: 'Development model with advanced features and configurability',
   },
   {
     id: 'flux-pro-1.1-ultra',
@@ -95,7 +100,7 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
   const [guidance, setGuidance] = useState(3.5)
 
   const isUltra = selectedModel === 'flux-pro-1.1-ultra'
-  const isKontext = selectedModel === 'flux-kontext-max' || selectedModel === 'flux-kontext-pro'
+  const isKontext = selectedModel === 'flux-kontext-max' || selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-dev'
   const isDev = selectedModel === 'flux-dev'
   const usesAspectRatio = isUltra || isKontext
 

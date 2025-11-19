@@ -27,7 +27,6 @@ type Props = {
 export default function PromptEditor({ section, prompt, onPromptUpdate }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [promptText, setPromptText] = useState(prompt.prompt_text)
-  const [negativePrompt, setNegativePrompt] = useState(prompt.negative_prompt || '')
   const [notes, setNotes] = useState(prompt.notes || '')
   const [saving, setSaving] = useState(false)
 
@@ -46,7 +45,6 @@ export default function PromptEditor({ section, prompt, onPromptUpdate }: Props)
         .insert({
           section_id: section.id,
           prompt_text: promptText,
-          negative_prompt: negativePrompt || null,
           version: prompt.version + 1,
           is_active: true,
           notes: notes || null,
@@ -68,7 +66,6 @@ export default function PromptEditor({ section, prompt, onPromptUpdate }: Props)
 
   function handleCancel() {
     setPromptText(prompt.prompt_text)
-    setNegativePrompt(prompt.negative_prompt || '')
     setNotes(prompt.notes || '')
     setIsEditing(false)
   }
@@ -106,25 +103,6 @@ export default function PromptEditor({ section, prompt, onPromptUpdate }: Props)
           ) : (
             <div className="bg-gray-800 rounded-lg p-3 text-gray-300 font-mono text-sm whitespace-pre-wrap">
               {prompt.prompt_text}
-            </div>
-          )}
-        </div>
-
-        {/* Negative Prompt */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Negative Prompt
-          </label>
-          {isEditing ? (
-            <textarea
-              value={negativePrompt}
-              onChange={(e) => setNegativePrompt(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white font-mono text-sm min-h-[80px]"
-              placeholder="Enter negative prompt..."
-            />
-          ) : (
-            <div className="bg-gray-800 rounded-lg p-3 text-gray-300 font-mono text-sm whitespace-pre-wrap">
-              {prompt.negative_prompt || 'None'}
             </div>
           )}
         </div>

@@ -13,6 +13,7 @@ type FluxModel =
   | 'flux-dev'
   | 'flux-kontext-max'
   | 'flux-kontext-pro'
+  | 'flux-kontext-dev'
 
 type GenerateImagePayload = {
   sectionId: string
@@ -45,7 +46,7 @@ function getAspectRatio(width: number, height: number): string {
 async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
   const model = payload.model || 'flux-pro-1.1'
   const isUltra = model === 'flux-pro-1.1-ultra'
-  const isKontext = model === 'flux-kontext-max' || model === 'flux-kontext-pro'
+  const isKontext = model === 'flux-kontext-max' || model === 'flux-kontext-pro' || model === 'flux-kontext-dev'
 
   // Build request body based on model
   const requestBody: Record<string, any> = {
