@@ -136,26 +136,30 @@ export default function SectionImageManager({
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB')
+      return
+    }
+
     setUploading(true)
     try {
-      // Upload to Supabase storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${section.section_code}-${Date.now()}.${fileExt}`
-      const filePath = `section-images/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('images').getPublicUrl(filePath)
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
 
       // Set as primary image
-      await handleSetPrimaryImage(publicUrl)
+      await handleSetPrimaryImage(base64)
     } catch (error) {
       console.error('Error uploading file:', error)
       alert('Failed to upload image')

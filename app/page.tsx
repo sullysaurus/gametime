@@ -304,8 +304,8 @@ export default function HomePage() {
                           alt={section.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading={index < 3 ? 'eager' : 'lazy'}
-                          priority={index < 2}
+                          loading="lazy"
+                          unoptimized={section.display_image_url.startsWith('data:')}
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gray-800" />
@@ -374,7 +374,8 @@ export default function HomePage() {
                         alt={section.name}
                         fill
                         className="object-cover"
-                        loading={index < 4 ? 'eager' : 'lazy'}
+                        loading="lazy"
+                        unoptimized={section.display_image_url.startsWith('data:')}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-xs">
@@ -449,6 +450,7 @@ export default function HomePage() {
                     alt={selectedSection.name}
                     fill
                     className="object-cover"
+                    unoptimized={selectedSection.display_image_url.startsWith('data:')}
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-600">
