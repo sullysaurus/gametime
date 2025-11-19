@@ -6,6 +6,7 @@ import Link from 'next/link'
 import ImageGenerator from '@/components/ImageGenerator'
 import ImageComparison from '@/components/ImageComparison'
 import PromptEditor from '@/components/PromptEditor'
+import PromptHistory from '@/components/PromptHistory'
 import SectionImageManager from '@/components/SectionImageManager'
 
 type Section = {
@@ -28,6 +29,7 @@ type Prompt = {
   version: number
   is_active: boolean
   notes: string | null
+  created_at: string
 }
 
 type GeneratedImage = {
@@ -253,6 +255,13 @@ export default function AdminPage() {
                   section={selectedSection}
                   prompt={activePrompt}
                   onPromptUpdate={handlePromptUpdate}
+                />
+
+                {/* Prompt History */}
+                <PromptHistory
+                  section={selectedSection}
+                  activePrompt={activePrompt}
+                  onPromptRestore={handlePromptUpdate}
                 />
 
                 <SectionImageManager

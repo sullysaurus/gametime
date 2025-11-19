@@ -16,6 +16,7 @@ type Prompt = {
   version: number
   is_active: boolean
   notes: string | null
+  created_at: string
 }
 
 type Props = {
