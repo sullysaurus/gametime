@@ -22,12 +22,14 @@ type Props = {
   section: Section
   generatedImage: GeneratedImage
   onStatusChange: () => void
+  onUseAsReference?: (imageUrl: string) => void
 }
 
 export default function ImageComparison({
   section,
   generatedImage,
   onStatusChange,
+  onUseAsReference,
 }: Props) {
   const [notes, setNotes] = useState('')
   const [updating, setUpdating] = useState(false)
@@ -150,21 +152,32 @@ export default function ImageComparison({
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => handleStatusUpdate('approved')}
-          disabled={updating}
-          className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
-        >
-          {updating ? 'Updating...' : '✓ Approve & Set as Current'}
-        </button>
-        <button
-          onClick={() => handleStatusUpdate('rejected')}
-          disabled={updating}
-          className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
-        >
-          {updating ? 'Updating...' : '✗ Reject'}
-        </button>
+      <div className="space-y-3">
+        {onUseAsReference && (
+          <button
+            onClick={() => onUseAsReference(generatedImage.image_url)}
+            disabled={updating}
+            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+          >
+            🎨 Use as Reference for Next Generation
+          </button>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={() => handleStatusUpdate('approved')}
+            disabled={updating}
+            className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+          >
+            {updating ? 'Updating...' : '✓ Approve & Set as Current'}
+          </button>
+          <button
+            onClick={() => handleStatusUpdate('rejected')}
+            disabled={updating}
+            className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+          >
+            {updating ? 'Updating...' : '✗ Reject'}
+          </button>
+        </div>
       </div>
     </div>
   )

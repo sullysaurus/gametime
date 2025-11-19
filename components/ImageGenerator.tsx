@@ -19,6 +19,8 @@ type Props = {
   prompt: Prompt
   onImageGenerated: () => void
   referenceImageUrl?: string | null
+  selectedReferenceImageUrl?: string | null
+  onClearReference?: () => void
 }
 
 type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
@@ -73,7 +75,7 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl }: Props) {
+export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl, selectedReferenceImageUrl, onClearReference }: Props) {
   const [selectedModel, setSelectedModel] = useState<FluxModel>('flux-pro-1.1')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,6 +105,10 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
   const isKontext = selectedModel === 'flux-kontext-max' || selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-dev'
   const isDev = selectedModel === 'flux-dev'
   const usesAspectRatio = isUltra || isKontext
+
+  // Determine which reference image to use (prioritize selected over default)
+  const activeReferenceImageUrl = selectedReferenceImageUrl || referenceImageUrl
+  const supportsReferenceImage = isUltra || isKontext
 
   async function handleGenerate() {
     setGenerating(true)
@@ -135,19 +141,33 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
         // Ultra-specific features
         if (isUltra) {
           requestBody.raw = raw
+
+          // Add image prompt if reference image exists (Ultra model)
+          if (activeReferenceImageUrl) {
+            // Fetch and convert reference image to base64
+            const imageResponse = await fetch(activeReferenceImageUrl)
+            const blob = await imageResponse.blob()
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader()
+              reader.onloadend = () => resolve(reader.result as string)
+              reader.readAsDataURL(blob)
+            })
+            requestBody.image_prompt = base64.split(',')[1] // Remove data:image/...;base64, prefix
+            requestBody.image_prompt_strength = imagePromptStrength
+          }
         }
 
-        // Add image prompt if reference image exists (Ultra only)
-        if (isUltra && referenceImageUrl) {
+        // Kontext models support input_image
+        if (isKontext && activeReferenceImageUrl) {
           // Fetch and convert reference image to base64
-          const imageResponse = await fetch(referenceImageUrl)
+          const imageResponse = await fetch(activeReferenceImageUrl)
           const blob = await imageResponse.blob()
           const base64 = await new Promise<string>((resolve) => {
             const reader = new FileReader()
             reader.onloadend = () => resolve(reader.result as string)
             reader.readAsDataURL(blob)
           })
-          requestBody.image_prompt = base64.split(',')[1] // Remove data:image/...;base64, prefix
+          requestBody.input_image = base64.split(',')[1] // Remove data:image/...;base64, prefix
           requestBody.image_prompt_strength = imagePromptStrength
         }
       } else {
@@ -213,18 +233,29 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
           </p>
         </div>
 
-        {/* Reference Image Preview (for Ultra) */}
-        {isUltra && referenceImageUrl && (
+        {/* Reference Image Preview (for Ultra and Kontext) */}
+        {supportsReferenceImage && activeReferenceImageUrl && (
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-            <div className="text-sm font-semibold text-gray-300 mb-2">
-              Reference Image (will be used for img2img)
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold text-gray-300">
+                {selectedReferenceImageUrl ? '🎨 Selected Reference Image' : 'Reference Image'} ({isUltra ? 'img2img' : 'input image'})
+              </div>
+              {selectedReferenceImageUrl && onClearReference && (
+                <button
+                  onClick={onClearReference}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
+                  disabled={generating}
+                >
+                  Clear Reference
+                </button>
+              )}
             </div>
             <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
-              <Image src={referenceImageUrl} alt={`${section.name} reference`} fill className="object-cover" />
+              <Image src={activeReferenceImageUrl} alt={`${section.name} reference`} fill className="object-cover" />
             </div>
             <div className="mt-3">
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Image Prompt Strength: {imagePromptStrength.toFixed(2)}
+                Image {isKontext ? 'Influence' : 'Prompt'} Strength: {imagePromptStrength.toFixed(2)}
               </label>
               <input
                 type="range"
@@ -240,6 +271,11 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
                 Lower = more creative, Higher = closer to reference
               </p>
             </div>
+            {selectedReferenceImageUrl && (
+              <p className="mt-2 text-xs text-blue-400">
+                💡 This image will be used as the starting point. Adjust your prompt to describe modifications (e.g., "zoom in and go to the left").
+              </p>
+            )}
           </div>
         )}
 

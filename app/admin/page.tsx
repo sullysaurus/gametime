@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import Image from 'next/image'
 import ImageGenerator from '@/components/ImageGenerator'
 import ImageComparison from '@/components/ImageComparison'
 import PromptEditor from '@/components/PromptEditor'
@@ -64,8 +65,11 @@ export default function AdminPage() {
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
+  const [allImages, setAllImages] = useState<GeneratedImage[]>([])
+  const [showAllImages, setShowAllImages] = useState(false)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
+  const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
     loadSections()
@@ -83,9 +87,12 @@ export default function AdminPage() {
     if (selectedSection) {
       loadActivePrompt()
       loadPendingImages()
+      loadAllImages()
       // Load reference image URL
       const localPhoto = getLocalPhotoUrl(selectedSection.section_code)
       setReferenceImageUrl(localPhoto || selectedSection.current_image_url)
+      // Clear selected reference when changing sections
+      setSelectedReferenceImageUrl(null)
     }
   }, [selectedSection])
 
@@ -163,16 +170,34 @@ export default function AdminPage() {
     }
   }
 
+  async function loadAllImages() {
+    if (!selectedSection) return
+
+    const { data, error } = await supabase
+      .from('generated_images')
+      .select('*')
+      .eq('section_id', selectedSection.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error loading all images:', error)
+    } else {
+      setAllImages(data || [])
+    }
+  }
+
   async function handlePromptUpdate(updatedPrompt: Prompt) {
     setActivePrompt(updatedPrompt)
   }
 
   async function handleImageGenerated() {
     await loadPendingImages()
+    await loadAllImages()
   }
 
   async function handleImageStatusChange() {
     await loadPendingImages()
+    await loadAllImages()
     await loadSections()
   }
 
@@ -180,6 +205,16 @@ export default function AdminPage() {
     if (!selectedSection) return
     setSelectedSection({ ...selectedSection, current_image_url: newUrl })
     loadSections()
+  }
+
+  function handleUseAsReference(imageUrl: string) {
+    setSelectedReferenceImageUrl(imageUrl)
+    // Scroll to top to see the ImageGenerator
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleClearReference() {
+    setSelectedReferenceImageUrl(null)
   }
 
   if (loading) {
@@ -248,6 +283,8 @@ export default function AdminPage() {
                   prompt={activePrompt}
                   onImageGenerated={handleImageGenerated}
                   referenceImageUrl={referenceImageUrl}
+                  selectedReferenceImageUrl={selectedReferenceImageUrl}
+                  onClearReference={handleClearReference}
                 />
 
                 {/* Prompt Editor */}
@@ -279,6 +316,7 @@ export default function AdminPage() {
                         section={selectedSection}
                         generatedImage={image}
                         onStatusChange={handleImageStatusChange}
+                        onUseAsReference={handleUseAsReference}
                       />
                     ))}
                   </div>
@@ -291,6 +329,65 @@ export default function AdminPage() {
                     </p>
                   </div>
                 )}
+
+                {/* All Generated Images */}
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Image History</h2>
+                    <button
+                      onClick={() => setShowAllImages(!showAllImages)}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+                    >
+                      {showAllImages ? 'Hide History' : `Show All Images (${allImages.length})`}
+                    </button>
+                  </div>
+
+                  {showAllImages && (
+                    <div className="space-y-4 mt-4">
+                      {allImages.length === 0 ? (
+                        <p className="text-gray-400 text-center py-4">No images generated yet.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {allImages.map((image) => (
+                            <div key={image.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                              <div className="relative aspect-video bg-gray-900">
+                                <Image
+                                  src={image.image_url}
+                                  alt={`Generated ${selectedSection.name}`}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div className="p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    image.status === 'approved' ? 'bg-green-600' :
+                                    image.status === 'rejected' ? 'bg-red-600' :
+                                    'bg-yellow-600'
+                                  }`}>
+                                    {image.status}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {new Date(image.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  {image.model_name}
+                                </div>
+                                <button
+                                  onClick={() => handleUseAsReference(image.image_url)}
+                                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors"
+                                >
+                                  Use as Reference
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>

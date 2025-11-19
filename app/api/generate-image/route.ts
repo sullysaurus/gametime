@@ -31,7 +31,8 @@ type GenerateImagePayload = {
   output_format?: 'jpeg' | 'png'
   raw?: boolean  // For Ultra model
   image_prompt?: string | null  // Base64 image for Ultra img2img
-  image_prompt_strength?: number  // 0.0-1.0 for Ultra img2img
+  image_prompt_strength?: number  // 0.0-1.0 for Ultra and Kontext img2img
+  input_image?: string | null  // Base64 image for Kontext img2img
   steps?: number  // For dev model
   guidance?: number  // For dev model
 }
@@ -76,6 +77,14 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
 
       if (payload.image_prompt) {
         requestBody.image_prompt = payload.image_prompt
+        requestBody.image_prompt_strength = payload.image_prompt_strength ?? 0.1
+      }
+    }
+
+    // Kontext-specific features (input_image for img2img)
+    if (isKontext) {
+      if (payload.input_image) {
+        requestBody.input_image = payload.input_image
         requestBody.image_prompt_strength = payload.image_prompt_strength ?? 0.1
       }
     }
