@@ -213,7 +213,10 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
         throw new Error(data.error || 'Failed to generate image')
       }
 
-      onImageGenerated()
+      // Small delay to ensure database has fully committed the insert
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      await onImageGenerated()
     } catch (err) {
       console.error('Generation error:', err)
       const message = err instanceof Error ? err.message : 'Failed to generate image'

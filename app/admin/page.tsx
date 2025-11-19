@@ -212,6 +212,7 @@ export default function AdminPage() {
   async function handleImageGenerated() {
     await loadPendingImages()
     await loadAllImages()
+    await loadGlobalReferences()
   }
 
   async function handleImageStatusChange() {
