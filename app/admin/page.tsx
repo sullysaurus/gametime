@@ -63,6 +63,35 @@ function getLocalPhotoUrl(sectionCode: string): string | null {
   return mapping[sectionCode] || null
 }
 
+// Sort sections from front to back
+function sortSectionsFrontToBack(sections: Section[]): Section[] {
+  // Define sort priority: lower numbers = closer to front
+  const sectionPriority: Record<string, number> = {
+    // Reserved rows (front to back by row number)
+    // General admission and back sections last
+    'BL': 900,
+    'BCL': 901,
+    'BCR': 902,
+    'BR': 903,
+    'GA1': 1000,
+    'GA2': 1001,
+    'SRO': 1002,
+  }
+
+  return sections.sort((a, b) => {
+    // If we have explicit priorities, use those
+    const aPriority = sectionPriority[a.section_code] ?? 500
+    const bPriority = sectionPriority[b.section_code] ?? 500
+
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority
+    }
+
+    // If same priority, sort by section_code or name
+    return a.section_code.localeCompare(b.section_code)
+  })
+}
+
 export default function AdminPage() {
   const [sections, setSections] = useState<Section[]>([])
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
@@ -105,7 +134,6 @@ export default function AdminPage() {
     const { data, error } = await supabase
       .from('sections')
       .select('*')
-      .order('category', { ascending: true })
 
     if (error) {
       console.error('Error loading sections:', error)
@@ -114,22 +142,24 @@ export default function AdminPage() {
     }
 
     if (data) {
-      setSections(data)
-      if (data.length > 0) {
+      // Sort sections from front to back
+      const sortedSections = sortSectionsFrontToBack(data)
+      setSections(sortedSections)
+      if (sortedSections.length > 0) {
         // Check if there's a pending section ID from URL
         const pendingSectionId = sessionStorage.getItem('pendingSectionId')
         if (pendingSectionId) {
-          const targetSection = data.find((s: Section) => s.id === pendingSectionId)
+          const targetSection = sortedSections.find((s: Section) => s.id === pendingSectionId)
           if (targetSection) {
             setSelectedSection(targetSection)
             sessionStorage.removeItem('pendingSectionId')
           } else {
-            setSelectedSection(data[0])
+            setSelectedSection(sortedSections[0])
           }
         } else if (!selectedSection) {
-          setSelectedSection(data[0])
+          setSelectedSection(sortedSections[0])
         } else {
-          const refreshed = data.find((section: Section) => section.id === selectedSection.id)
+          const refreshed = sortedSections.find((section: Section) => section.id === selectedSection.id)
           if (refreshed) {
             setSelectedSection(refreshed)
           }
