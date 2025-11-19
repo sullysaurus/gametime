@@ -31,6 +31,8 @@ type Prompt = {
   is_active: boolean
   notes: string | null
   created_at: string
+  tags: string[]
+  is_template: boolean
 }
 
 type GeneratedImage = {

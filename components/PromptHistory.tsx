@@ -17,6 +17,8 @@ type Prompt = {
   is_active: boolean
   notes: string | null
   created_at: string
+  tags: string[]
+  is_template: boolean
 }
 
 type Props = {
@@ -29,6 +31,17 @@ export default function PromptHistory({ section, activePrompt, onPromptRestore }
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
+  // Get all unique tags from prompts
+  const allTags = Array.from(
+    new Set(prompts.flatMap((p) => p.tags || []))
+  ).sort()
+
+  // Filter prompts by selected tag
+  const filteredPrompts = selectedTag
+    ? prompts.filter((p) => p.tags?.includes(selectedTag))
+    : prompts
 
   useEffect(() => {
     loadPromptHistory()
@@ -108,12 +121,44 @@ export default function PromptHistory({ section, activePrompt, onPromptRestore }
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
       <h2 className="text-xl font-semibold mb-4">Prompt History</h2>
-      <p className="text-sm text-gray-400 mb-4">
-        {prompts.length} version{prompts.length !== 1 ? 's' : ''} total
-      </p>
+      <div className="mb-4">
+        <p className="text-sm text-gray-400 mb-2">
+          {prompts.length} version{prompts.length !== 1 ? 's' : ''} total
+          {selectedTag && ` • Filtered by: ${selectedTag}`}
+        </p>
+
+        {/* Tag Filter */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                selectedTag === null
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              All
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedTag === tag
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="space-y-3">
-        {prompts.map((prompt) => {
+        {filteredPrompts.map((prompt) => {
           const isExpanded = expandedId === prompt.id
           const isActive = prompt.id === activePrompt.id
 
@@ -155,6 +200,25 @@ export default function PromptHistory({ section, activePrompt, onPromptRestore }
                 {/* Notes preview */}
                 {prompt.notes && (
                   <p className="text-sm text-gray-400 italic">{prompt.notes}</p>
+                )}
+
+                {/* Tags and Template Status */}
+                {(prompt.tags?.length > 0 || prompt.is_template) && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {prompt.is_template && (
+                      <span className="px-2 py-1 bg-purple-600/20 border border-purple-600 rounded-full text-xs text-purple-300">
+                        📋 Template
+                      </span>
+                    )}
+                    {prompt.tags?.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 bg-blue-600/20 border border-blue-600 rounded-full text-xs text-blue-300"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 {/* Prompt preview (first 150 chars) */}
