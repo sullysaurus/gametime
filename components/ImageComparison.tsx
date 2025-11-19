@@ -155,8 +155,13 @@ export default function ImageComparison({
       <div className="space-y-3">
         {onUseAsReference && (
           <button
-            onClick={() => onUseAsReference(generatedImage.image_url)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onUseAsReference(generatedImage.image_url)
+            }}
             disabled={updating}
+            type="button"
             className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
           >
             🎨 Use as Reference for Next Generation
@@ -164,15 +169,25 @@ export default function ImageComparison({
         )}
         <div className="flex gap-3">
           <button
-            onClick={() => handleStatusUpdate('approved')}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleStatusUpdate('approved')
+            }}
             disabled={updating}
+            type="button"
             className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
           >
             {updating ? 'Updating...' : '✓ Approve & Set as Current'}
           </button>
           <button
-            onClick={() => handleStatusUpdate('rejected')}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleStatusUpdate('rejected')
+            }}
             disabled={updating}
+            type="button"
             className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
           >
             {updating ? 'Updating...' : '✗ Reject'}

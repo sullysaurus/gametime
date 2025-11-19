@@ -375,7 +375,12 @@ export default function AdminPage() {
                                   {image.model_name}
                                 </div>
                                 <button
-                                  onClick={() => handleUseAsReference(image.image_url)}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    handleUseAsReference(image.image_url)
+                                  }}
+                                  type="button"
                                   className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors"
                                 >
                                   Use as Reference
