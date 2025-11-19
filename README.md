@@ -131,13 +131,33 @@ Access the admin dashboard at [http://localhost:3000/admin](http://localhost:300
 
 ### Deploy to Vercel
 
-1. Push your code to GitHub
-2. Import the repository in Vercel
-3. Add environment variables in Vercel dashboard:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `OPENAI_API_KEY`
-4. Deploy!
+1. **Push your code to GitHub** (if not already done):
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com) and sign in
+   - Click "Add New Project"
+   - Import your GitHub repository: `sullysaurus/gametime`
+   - Vercel will auto-detect it as a Next.js project
+
+3. **Configure Environment Variables**:
+   Before deploying, add these in the Vercel dashboard (Settings → Environment Variables):
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://aamjoctqvztopmmultsl.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   AI_GATEWAY_API_KEY=vck_3tH9HOmrKG30QUurK3hdz2TnbwWFY2g7vWeDIYT1yiBxCCdmOf1Cti7V
+   AI_GATEWAY_URL=https://gateway.vercel.ai/v1
+   ```
+
+4. **Deploy!**
+   - Click "Deploy"
+   - Vercel will build and deploy your application
+   - You'll get a URL like `https://gametime-xyz.vercel.app`
 
 ### Setting Up Vercel AI Gateway (Optional)
 
