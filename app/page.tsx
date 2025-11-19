@@ -141,7 +141,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen md:h-screen bg-black text-white flex flex-col">
       {/* Top Nav - Desktop Only */}
       <div className="hidden md:block bg-black border-b border-gray-800 z-50 flex-shrink-0">
         <div className="px-4 py-3 flex items-center gap-6">
@@ -184,7 +184,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content - Split Layout */}
-      <div className="flex flex-col md:flex-row flex-1 md:overflow-hidden relative">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
         {/* Left Panel - Ticket List */}
         <div className="w-full md:w-[650px] border-r border-gray-800 overflow-y-auto bg-[#1a1a1a] flex-shrink-0">
           {/* Mobile Header - Event Info */}
