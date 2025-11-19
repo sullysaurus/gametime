@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import sharp from 'sharp'
 
 // Black Forest Labs API configuration
 const BFL_API_URL = 'https://api.bfl.ai/v1'
@@ -148,17 +149,44 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
         throw new Error('No image URL in completed result')
       }
 
-      // Download the image and convert to base64 for storage
+      // Download the image
       const imageResponse = await fetch(imageUrl)
       if (!imageResponse.ok) {
         throw new Error('Failed to download generated image')
       }
 
       const arrayBuffer = await imageResponse.arrayBuffer()
-      const base64 = Buffer.from(arrayBuffer).toString('base64')
-      const mimeType = payload.output_format === 'png' ? 'image/png' : 'image/jpeg'
+      const buffer = Buffer.from(arrayBuffer)
 
-      return `data:${mimeType};base64,${base64}`
+      // Compress image to WebP for optimal performance
+      // 80% quality provides excellent visual quality with ~60% size reduction
+      const compressedImage = await sharp(buffer)
+        .webp({ quality: 80 })
+        .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer()
+
+      // Upload to Supabase Storage instead of base64
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+      const filePath = `generated/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('generated-images')
+        .upload(filePath, compressedImage, {
+          contentType: 'image/webp',
+          cacheControl: '31536000', // 1 year cache
+        })
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError)
+        throw new Error(`Failed to upload image: ${uploadError.message}`)
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('generated-images')
+        .getPublicUrl(filePath)
+
+      return publicUrl
     }
 
     if (result.status === 'Error' || result.status === 'Failed') {

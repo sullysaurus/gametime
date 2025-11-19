@@ -317,6 +317,7 @@ export default function HomePage() {
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                           unoptimized={section.display_image_url.startsWith('data:')}
+                          sizes="(max-width: 768px) 160px, 256px"
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gray-800" />
@@ -387,6 +388,7 @@ export default function HomePage() {
                         className="object-cover"
                         loading="lazy"
                         unoptimized={section.display_image_url.startsWith('data:')}
+                        sizes="45vw"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-xs">
@@ -462,6 +464,8 @@ export default function HomePage() {
                     fill
                     className="object-cover"
                     unoptimized={selectedSection.display_image_url.startsWith('data:')}
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    priority
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-600">
