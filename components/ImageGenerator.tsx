@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 type Section = {
@@ -21,117 +21,133 @@ type Props = {
   referenceImageUrl?: string | null
 }
 
-type ModelPreset = {
-  id: string
-  name: string
-  provider: string
-  description: string
-  supportsReference: boolean
-  defaults: {
-    size: string
-    quality: 'standard' | 'hd'
-    style: 'vivid' | 'natural'
-    background?: string | null
-  }
-}
+type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev'
 
-const MODEL_PRESETS: ModelPreset[] = [
+const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
   {
-    id: 'dall-e-3',
-    name: 'DALL·E 3 (Ultra HD)',
-    provider: 'openai',
-    description: 'High-res, photorealistic renders perfect for scenic venue shots.',
-    supportsReference: false,
-    defaults: { size: '1920x1080', quality: 'hd', style: 'vivid' },
+    id: 'flux-pro-1.1-ultra',
+    name: 'FLUX 1.1 Pro Ultra',
+    description: 'Up to 4MP resolution, raw mode for authentic photography feel',
   },
   {
-    id: 'gpt-image-1',
-    name: 'GPT-Image 1 (Balanced)',
-    provider: 'openai',
-    description: 'Fast & flexible with support for transparent or flat backgrounds.',
-    supportsReference: true,
-    defaults: { size: '1920x1080', quality: 'standard', style: 'natural', background: 'white' },
+    id: 'flux-pro-1.1',
+    name: 'FLUX 1.1 Pro',
+    description: 'High-quality text-to-image generation with excellent prompt adherence',
   },
   {
-    id: 'stabilityai/stable-diffusion-3',
-    name: 'Stable Diffusion 3 (Detail)',
-    provider: 'stability',
-    description: 'Gateway model tuned for intricate textures and lighting nuance.',
-    supportsReference: false,
-    defaults: { size: '1024x1024', quality: 'standard', style: 'vivid' },
+    id: 'flux-pro',
+    name: 'FLUX Pro',
+    description: 'Original pro model with great quality and speed',
   },
   {
-    id: 'black-forest-labs/flux-pro',
-    name: 'FLUX.1 Pro (Creative)',
-    provider: 'black-forest-labs',
-    description: 'State-of-the-art FLUX pipeline for stylized poster-like art.',
-    supportsReference: false,
-    defaults: { size: '1024x1792', quality: 'hd', style: 'natural' },
+    id: 'flux-dev',
+    name: 'FLUX Dev',
+    description: 'Development model with configurable steps and guidance',
   },
 ]
 
-const SUGGESTED_SIZES = ['1920x1080', '1792x1024', '1024x1792', '1536x1024', '1024x1536', '1024x1024', '768x768']
-const QUALITY_OPTIONS: Array<'standard' | 'hd'> = ['standard', 'hd']
-const STYLE_OPTIONS: Array<'vivid' | 'natural'> = ['vivid', 'natural']
-
-const defaultPreset = MODEL_PRESETS[0]
+const ASPECT_RATIOS = [
+  '1:1',
+  '16:9',
+  '21:9',
+  '4:3',
+  '3:2',
+  '9:16',
+  '9:21',
+  '3:4',
+  '2:3',
+]
 
 export default function ImageGenerator({ section, prompt, onImageGenerated, referenceImageUrl }: Props) {
-  const [selectedModel, setSelectedModel] = useState(defaultPreset.id)
-  const [size, setSize] = useState(defaultPreset.defaults.size)
-  const [quality, setQuality] = useState<'standard' | 'hd'>(defaultPreset.defaults.quality)
-  const [style, setStyle] = useState<'vivid' | 'natural'>(defaultPreset.defaults.style)
-  const [background, setBackground] = useState<string>(defaultPreset.defaults.background || '')
+  const [selectedModel, setSelectedModel] = useState<FluxModel>('flux-pro-1.1')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [useReferenceImage, setUseReferenceImage] = useState<boolean>(Boolean(referenceImageUrl))
 
-  const activePreset = useMemo(
-    () => MODEL_PRESETS.find((model) => model.id === selectedModel) || defaultPreset,
-    [selectedModel]
-  )
+  // Dimensions (for non-Ultra models)
+  const [width, setWidth] = useState(1024)
+  const [height, setHeight] = useState(1024)
 
-  useEffect(() => {
-    if (!activePreset) return
-    setSize(activePreset.defaults.size)
-    setQuality(activePreset.defaults.quality)
-    setStyle(activePreset.defaults.style)
-    setBackground(activePreset.defaults.background || '')
-    if (!referenceImageUrl) {
-      setUseReferenceImage(false)
-    }
-  }, [activePreset])
+  // Aspect ratio (for Ultra model)
+  const [aspectRatio, setAspectRatio] = useState('16:9')
 
-  useEffect(() => {
-    setUseReferenceImage(Boolean(referenceImageUrl))
-  }, [referenceImageUrl])
+  // Common parameters
+  const [promptUpsampling, setPromptUpsampling] = useState(false)
+  const [seed, setSeed] = useState<string>('')
+  const [safetyTolerance, setSafetyTolerance] = useState(2)
+  const [outputFormat, setOutputFormat] = useState<'jpeg' | 'png'>('jpeg')
 
-  const canUseReference = Boolean(referenceImageUrl) && activePreset.supportsReference
+  // Ultra-specific parameters
+  const [raw, setRaw] = useState(false)
+  const [imagePromptStrength, setImagePromptStrength] = useState(0.1)
+
+  // Dev-specific parameters
+  const [steps, setSteps] = useState(28)
+  const [guidance, setGuidance] = useState(3.5)
+
+  const isUltra = selectedModel === 'flux-pro-1.1-ultra'
+  const isDev = selectedModel === 'flux-dev'
 
   async function handleGenerate() {
     setGenerating(true)
     setError(null)
 
     try {
+      const requestBody: any = {
+        sectionId: section.id,
+        promptId: prompt.id,
+        prompt: prompt.prompt_text,
+        negativePrompt: prompt.negative_prompt,
+        model: selectedModel,
+        provider: 'black-forest-labs',
+        prompt_upsampling: promptUpsampling,
+        safety_tolerance: safetyTolerance,
+        output_format: outputFormat,
+      }
+
+      // Add seed if provided
+      if (seed.trim()) {
+        const seedNum = parseInt(seed.trim())
+        if (!isNaN(seedNum)) {
+          requestBody.seed = seedNum
+        }
+      }
+
+      // Ultra model parameters
+      if (isUltra) {
+        requestBody.aspect_ratio = aspectRatio
+        requestBody.raw = raw
+
+        // Add image prompt if reference image exists
+        if (referenceImageUrl) {
+          // Fetch and convert reference image to base64
+          const imageResponse = await fetch(referenceImageUrl)
+          const blob = await imageResponse.blob()
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(blob)
+          })
+          requestBody.image_prompt = base64.split(',')[1] // Remove data:image/...;base64, prefix
+          requestBody.image_prompt_strength = imagePromptStrength
+        }
+      } else {
+        // Non-Ultra models use width/height
+        requestBody.width = width
+        requestBody.height = height
+      }
+
+      // Dev model parameters
+      if (isDev) {
+        requestBody.steps = steps
+        requestBody.guidance = guidance
+      }
+
       const response = await fetch('/api/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          sectionId: section.id,
-          promptId: prompt.id,
-          prompt: prompt.prompt_text,
-          negativePrompt: prompt.negative_prompt,
-          model: activePreset.id,
-          provider: activePreset.provider,
-          size: size.trim(),
-          quality,
-          style,
-          background: background.trim() === '' ? null : background.trim(),
-          referenceImageUrl: canUseReference && useReferenceImage ? referenceImageUrl : null,
-          useReferenceImage: canUseReference && useReferenceImage,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const data = await response.json()
@@ -152,141 +168,253 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
 
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-      <h2 className="text-xl font-semibold mb-4">Generate New Image</h2>
+      <h2 className="text-xl font-semibold mb-4">Generate New Image with FLUX</h2>
 
       <div className="space-y-6">
+        {/* Model Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Model
+            FLUX Model
           </label>
           <select
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => setSelectedModel(e.target.value as FluxModel)}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
             disabled={generating}
           >
-            {MODEL_PRESETS.map((model) => (
+            {FLUX_MODELS.map((model) => (
               <option key={model.id} value={model.id}>
-                {model.name} ({model.provider})
+                {model.name}
               </option>
             ))}
           </select>
-          <p className="mt-2 text-sm text-gray-400">{activePreset.description}</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Defaults: {activePreset.defaults.size} · {activePreset.defaults.quality.toUpperCase()} ·{' '}
-            {activePreset.defaults.style}{' '}
-            {activePreset.defaults.background ? `· ${activePreset.defaults.background}` : ''}
+          <p className="mt-2 text-sm text-gray-400">
+            {FLUX_MODELS.find((m) => m.id === selectedModel)?.description}
           </p>
         </div>
 
-        {referenceImageUrl && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <div className="text-sm font-semibold text-gray-300 mb-2">
-                Section Reference Photo
-              </div>
-              <div className="relative aspect-video bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-                <ImagePreview src={referenceImageUrl} alt={`${section.name} reference`} />
-              </div>
+        {/* Reference Image Preview (for Ultra) */}
+        {isUltra && referenceImageUrl && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div className="text-sm font-semibold text-gray-300 mb-2">
+              Reference Image (will be used for img2img)
             </div>
-            <div>
-              <label className="flex items-start gap-3 bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={useReferenceImage && canUseReference}
-                  onChange={() => setUseReferenceImage((prev) => !prev)}
-                  disabled={!canUseReference || generating}
-                />
-                <div>
-                  <div className="font-semibold text-white">Use reference as input</div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {canUseReference
-                      ? 'GPT-Image 1 can take the current seat photo and enhance it with your prompt.'
-                      : 'Switch to GPT-Image 1 to enable direct reference-based enhancements.'}
-                  </p>
-                </div>
+            <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
+              <Image src={referenceImageUrl} alt={`${section.name} reference`} fill className="object-cover" />
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Image Prompt Strength: {imagePromptStrength.toFixed(2)}
               </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={imagePromptStrength}
+                onChange={(e) => setImagePromptStrength(parseFloat(e.target.value))}
+                className="w-full"
+                disabled={generating}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Lower = more creative, Higher = closer to reference
+              </p>
             </div>
           </div>
         )}
 
+        {/* Dimensions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {isUltra ? (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Aspect Ratio
+              </label>
+              <select
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
+                disabled={generating}
+              >
+                {ASPECT_RATIOS.map((ratio) => (
+                  <option key={ratio} value={ratio}>
+                    {ratio}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Ultra model uses aspect ratios instead of exact dimensions</p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Width (px)
+                </label>
+                <input
+                  type="number"
+                  value={width}
+                  onChange={(e) => setWidth(parseInt(e.target.value) || 1024)}
+                  min={256}
+                  max={2048}
+                  step={64}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
+                  disabled={generating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Height (px)
+                </label>
+                <input
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(parseInt(e.target.value) || 1024)}
+                  min={256}
+                  max={2048}
+                  step={64}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
+                  disabled={generating}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Common Parameters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Size
-            </label>
-            <input
-              type="text"
-              list="image-size-options"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
-              disabled={generating}
-              placeholder="1792x1024"
-            />
-            <datalist id="image-size-options">
-              {SUGGESTED_SIZES.map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
-            <p className="mt-1 text-xs text-gray-500">Use WIDTHxHEIGHT. Models usually accept 1024 or 1792 wide/tall.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Quality
+              Output Format
             </label>
             <select
-              value={quality}
-              onChange={(e) => setQuality(e.target.value as 'standard' | 'hd')}
+              value={outputFormat}
+              onChange={(e) => setOutputFormat(e.target.value as 'jpeg' | 'png')}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
               disabled={generating}
             >
-              {QUALITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option.toUpperCase()}
-                </option>
-              ))}
+              <option value="jpeg">JPEG (smaller file)</option>
+              <option value="png">PNG (lossless)</option>
             </select>
-            <p className="mt-1 text-xs text-gray-500">HD spends more credits but captures more texture.</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Style
-            </label>
-            <select
-              value={style}
-              onChange={(e) => setStyle(e.target.value as 'vivid' | 'natural')}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
-              disabled={generating}
-            >
-              {STYLE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">Vivid boosts contrast. Natural keeps filmic realism.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Background
+              Seed (optional)
             </label>
             <input
               type="text"
-              value={background}
-              onChange={(e) => setBackground(e.target.value)}
-              placeholder="transparent, white, #101820, etc."
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+              placeholder="Random (leave empty)"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder:text-gray-500"
               disabled={generating}
             />
-            <p className="mt-1 text-xs text-gray-500">Leave empty to let the model decide; GPT-Image supports transparency.</p>
+            <p className="mt-1 text-xs text-gray-500">Use same seed for reproducible results</p>
           </div>
         </div>
 
+        {/* Safety Tolerance */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Safety Tolerance: {safetyTolerance}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="6"
+            step="1"
+            value={safetyTolerance}
+            onChange={(e) => setSafetyTolerance(parseInt(e.target.value))}
+            className="w-full"
+            disabled={generating}
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>Most Restrictive (0)</span>
+            <span>Balanced (2)</span>
+            <span>Most Permissive (6)</span>
+          </div>
+        </div>
+
+        {/* Prompt Upsampling */}
+        <div>
+          <label className="flex items-start gap-3 bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={promptUpsampling}
+              onChange={() => setPromptUpsampling(!promptUpsampling)}
+              disabled={generating}
+            />
+            <div>
+              <div className="font-semibold text-white">Prompt Upsampling</div>
+              <p className="text-sm text-gray-400 mt-1">
+                Automatically enhance your prompt with more details for better results
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {/* Ultra-specific: Raw Mode */}
+        {isUltra && (
+          <div>
+            <label className="flex items-start gap-3 bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={raw}
+                onChange={() => setRaw(!raw)}
+                disabled={generating}
+              />
+              <div>
+                <div className="font-semibold text-white">Raw Mode</div>
+                <p className="text-sm text-gray-400 mt-1">
+                  Authentic candid photography feel with natural aesthetics and increased diversity
+                </p>
+              </div>
+            </label>
+          </div>
+        )}
+
+        {/* Dev-specific: Steps and Guidance */}
+        {isDev && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Steps: {steps}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="50"
+                step="1"
+                value={steps}
+                onChange={(e) => setSteps(parseInt(e.target.value))}
+                className="w-full"
+                disabled={generating}
+              />
+              <p className="mt-1 text-xs text-gray-500">More steps = higher quality but slower</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Guidance Scale: {guidance.toFixed(1)}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                step="0.5"
+                value={guidance}
+                onChange={(e) => setGuidance(parseFloat(e.target.value))}
+                className="w-full"
+                disabled={generating}
+              />
+              <p className="mt-1 text-xs text-gray-500">Higher = follows prompt more closely</p>
+            </div>
+          </div>
+        )}
+
+        {/* Generate Button */}
         <button
           onClick={handleGenerate}
           disabled={generating}
@@ -310,7 +438,7 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Generating...
+              Generating... (this may take 30-60 seconds)
             </span>
           ) : (
             'Generate Image'
@@ -325,20 +453,15 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
         )}
 
         <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-400">
-          <p>
-            Every generation stores the model + settings with the database record so you can
-            quickly replicate winning looks later.
-          </p>
+          <p className="font-medium text-gray-300 mb-1">🚀 FLUX Pro Tips:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Use <strong>Ultra</strong> for high-resolution photos (up to 4MP)</li>
+            <li>Enable <strong>Raw Mode</strong> for authentic photography aesthetics</li>
+            <li>Use <strong>Prompt Upsampling</strong> if you want AI to enhance your prompt</li>
+            <li><strong>Dev model</strong> lets you tweak steps and guidance for fine control</li>
+          </ul>
         </div>
       </div>
-    </div>
-  )
-}
-
-function ImagePreview({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="absolute inset-0">
-      <Image src={src} alt={alt} fill className="object-cover" />
     </div>
   )
 }

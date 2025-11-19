@@ -1,11 +1,12 @@
 # Red Rocks AI Image Generator
 
-A Next.js application for generating, comparing, and managing AI-generated concert venue images for Red Rocks Amphitheatre sections using OpenAI DALL-E 3 and Vercel AI Gateway.
+A Next.js application for generating, comparing, and managing AI-generated concert venue images for Red Rocks Amphitheatre sections using multiple AI providers (OpenAI, Claude, Gemini).
 
 ## Features
 
-- 🎨 **AI Image Generation**: Generate stunning concert venue images using DALL-E 3
-- 🔄 **Model Switching**: Easily switch between different AI models via Vercel AI Gateway
+- 🎨 **AI Image Generation**: Generate stunning concert venue images using DALL-E 3, GPT-Image, Stable Diffusion, and FLUX
+- 🤖 **Multi-Provider Text AI**: Use Claude or Gemini for prompt enhancement and text generation
+- 🔄 **Model Switching**: Easily switch between different AI models and providers
 - 📊 **Image Comparison**: Side-by-side comparison of original vs generated images
 - ✅ **Approve/Reject Workflow**: Review and approve images before they go live
 - ✏️ **Prompt Editor**: Edit and version control your image generation prompts
@@ -18,15 +19,22 @@ A Next.js application for generating, comparing, and managing AI-generated conce
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Database**: Supabase (PostgreSQL)
-- **AI**: OpenAI DALL-E 3 via Vercel AI SDK
+- **AI Providers**:
+  - OpenAI (image generation with DALL-E 3, GPT-Image)
+  - Anthropic Claude (text generation, prompt enhancement)
+  - Google Gemini (text generation alternative)
+- **AI SDK**: Vercel AI SDK (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/openai`)
 - **Deployment**: Vercel
 
 ## Prerequisites
 
 - Node.js 18+
 - Supabase account
-- OpenAI API key
-- Vercel account (for deployment)
+- **API Keys** (at least one required):
+  - OpenAI API key (for image generation)
+  - Anthropic API key (for Claude text features)
+  - Google API key (for Gemini text features)
+- Vercel account (for deployment and optional AI Gateway)
 
 ## Setup Instructions
 
@@ -55,20 +63,30 @@ cp .env.local.example .env.local
 Then fill in your credentials:
 
 ```env
-# Supabase
+# Supabase (Required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 
-# OpenAI
+# OpenAI (Required for image generation)
 OPENAI_API_KEY=sk-your-openai-api-key
 
-# Optional: Vercel AI Gateway
-# AI_GATEWAY_URL=https://your-gateway.vercel.app
+# Claude (Optional - for text features)
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+
+# Gemini (Optional - alternative to Claude)
+GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-key
+
+# Vercel AI Gateway (Optional - for analytics/caching)
+# AI_GATEWAY_API_KEY=your-gateway-token
+# AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 ```
 
 **Where to find these:**
 - Supabase URL & Key: Settings → API in your Supabase dashboard
 - OpenAI API Key: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- Anthropic API Key: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+- Google AI API Key: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- Vercel AI Gateway: [vercel.com/docs/ai-gateway](https://vercel.com/docs/ai-gateway)
 
 ### 4. Run Development Server
 

@@ -9,8 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.45",
+    "@ai-sdk/google": "^2.0.38",
+    "@ai-sdk/openai": "^2.0.68",
     "@supabase/supabase-js": "^2.83.0",
-    "ai": "^5.0.94",
+    "ai": "^5.0.95",
     "next": "16.0.3",
     "openai": "^6.9.1",
     "react": "19.2.0",
