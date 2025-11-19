@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-type Params = {
-  params: {
+type RouteParams = {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, context: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await context.params
     const body = await request.json()
     const { status, notes } = body
 
