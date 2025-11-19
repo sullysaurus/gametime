@@ -35,13 +35,13 @@ export default function PromptEditor({ section, prompt, onPromptUpdate }: Props)
     setSaving(true)
     try {
       // Deactivate current prompt
-      await supabase
+      await (supabase as any)
         .from('prompts')
         .update({ is_active: false })
         .eq('section_id', section.id)
 
       // Create new prompt version
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('prompts')
         .insert({
           section_id: section.id,

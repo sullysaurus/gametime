@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest, context: RouteParams) {
       updateData.approved_at = null
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('generated_images')
       .update(updateData)
       .eq('id', id)
@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest, context: RouteParams) {
 
     // If approved, update the section's current_image_url
     if (status === 'approved' && data.section_id) {
-      await supabase
+      await (supabase as any)
         .from('sections')
         .update({
           current_image_url: data.image_url,
@@ -57,10 +57,11 @@ export async function PATCH(request: NextRequest, context: RouteParams) {
     }
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Status update error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update status'
     return NextResponse.json(
-      { error: error.message || 'Failed to update status' },
+      { error: message },
       { status: 500 }
     )
   }

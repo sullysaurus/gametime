@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import ImageGenerator from '@/components/ImageGenerator'
 import ImageComparison from '@/components/ImageComparison'
 import PromptEditor from '@/components/PromptEditor'
+import SectionImageManager from '@/components/SectionImageManager'
 
 type Section = {
   id: string
@@ -41,21 +42,47 @@ type GeneratedImage = {
   created_at: string
 }
 
+// Map section codes to local photos
+function getLocalPhotoUrl(sectionCode: string): string | null {
+  const mapping: Record<string, string> = {
+    'BL': '/sections/back-left.jpeg',
+    'BCL': '/sections/back-left-center.jpeg',
+    'BCR': '/sections/back-right-center.jpeg',
+    'BR': '/sections/back-right.jpeg',
+    'GA1': '/sections/general-admission.jpeg',
+    'GA2': '/sections/general-admission.jpeg',
+    'SRO': '/sections/general-admission.jpeg',
+  }
+  return mapping[sectionCode] || null
+}
+
 export default function AdminPage() {
   const [sections, setSections] = useState<Section[]>([])
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
   const [loading, setLoading] = useState(true)
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
     loadSections()
+
+    // Check for section query parameter
+    const urlParams = new URLSearchParams(window.location.search)
+    const sectionId = urlParams.get('section')
+    if (sectionId) {
+      // Store it to select after sections load
+      sessionStorage.setItem('pendingSectionId', sectionId)
+    }
   }, [])
 
   useEffect(() => {
     if (selectedSection) {
       loadActivePrompt()
       loadPendingImages()
+      // Load reference image URL
+      const localPhoto = getLocalPhotoUrl(selectedSection.section_code)
+      setReferenceImageUrl(localPhoto || selectedSection.current_image_url)
     }
   }, [selectedSection])
 
@@ -67,10 +94,31 @@ export default function AdminPage() {
 
     if (error) {
       console.error('Error loading sections:', error)
-    } else {
-      setSections(data || [])
-      if (data && data.length > 0 && !selectedSection) {
-        setSelectedSection(data[0])
+      setLoading(false)
+      return
+    }
+
+    if (data) {
+      setSections(data)
+      if (data.length > 0) {
+        // Check if there's a pending section ID from URL
+        const pendingSectionId = sessionStorage.getItem('pendingSectionId')
+        if (pendingSectionId) {
+          const targetSection = data.find((s: Section) => s.id === pendingSectionId)
+          if (targetSection) {
+            setSelectedSection(targetSection)
+            sessionStorage.removeItem('pendingSectionId')
+          } else {
+            setSelectedSection(data[0])
+          }
+        } else if (!selectedSection) {
+          setSelectedSection(data[0])
+        } else {
+          const refreshed = data.find((section: Section) => section.id === selectedSection.id)
+          if (refreshed) {
+            setSelectedSection(refreshed)
+          }
+        }
       }
     }
     setLoading(false)
@@ -123,6 +171,12 @@ export default function AdminPage() {
   async function handleImageStatusChange() {
     await loadPendingImages()
     await loadSections()
+  }
+
+  function handleSectionImageChange(newUrl: string | null) {
+    if (!selectedSection) return
+    setSelectedSection({ ...selectedSection, current_image_url: newUrl })
+    loadSections()
   }
 
   if (loading) {
@@ -181,11 +235,17 @@ export default function AdminPage() {
                   onPromptUpdate={handlePromptUpdate}
                 />
 
+                <SectionImageManager
+                  section={selectedSection}
+                  onPrimaryImageChange={handleSectionImageChange}
+                />
+
                 {/* Image Generator */}
                 <ImageGenerator
                   section={selectedSection}
                   prompt={activePrompt}
                   onImageGenerated={handleImageGenerated}
+                  referenceImageUrl={referenceImageUrl}
                 />
 
                 {/* Pending Images */}

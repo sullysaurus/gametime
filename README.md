@@ -91,6 +91,16 @@ Access the admin dashboard at [http://localhost:3000/admin](http://localhost:300
 5. **Review**: Compare the new image with the current one
 6. **Approve/Reject**: Approve to set as the current image, or reject to discard
 
+#### Model Presets & Advanced Controls
+
+- **Model presets**: Choose between DALL·E 3 (Ultra HD), GPT-Image 1 (Balanced), Stable Diffusion 3 (Detail), and FLUX.1 Pro (Creative). Each preset shows its recommended defaults but you can tweak them freely.
+- **Size**: Accepts any `WIDTHxHEIGHT` value. Autocomplete lists the common 1024/1792 aspect ratios.
+- **Quality**: Toggle `standard` vs `hd` for OpenAI models. HD consumes more credits but yields sharper textures.
+- **Style**: Switch between `vivid` (high saturation) and `natural` (cinematic neutrality) for models that support it.
+- **Background**: Supply `transparent`, `white`, hex colors, etc.—especially useful for GPT-Image 1 cutouts.
+- All selected settings are logged alongside the Supabase record to make reproducing a winning combo trivial.
+- **Reference Enhancements**: When you pick a section we automatically pull in its current public photo. Switch on “Use reference as input” (available for GPT-Image 1) to feed that photo into the generation call so you can iterate on the exact angle/lighting you already show on the ticketing page.
+
 ### Public Page
 
 - Visit the homepage (`/`) to see all sections with their approved images
@@ -136,9 +146,13 @@ Vercel AI Gateway allows you to:
 - Monitor and log all requests
 - Implement rate limiting and caching
 
-1. Create an AI Gateway in Vercel dashboard
-2. Add the gateway URL to your environment variables
-3. Configure allowed models in the gateway settings
+See `docs/vercel-ai-gateway.md` for the full setup guide. At minimum you will need:
+
+1. A Gateway URL that routes to your configured models (DALL·E 3, GPT-Image 1, Stable Diffusion 3, FLUX.1 Pro)
+2. A Gateway Access Token (used as `OPENAI_API_KEY` locally)
+3. `.env.local` updated with both `OPENAI_API_KEY` and `AI_GATEWAY_URL`
+
+> ℹ️ DALL·E 3 + GPT-Image 1 run directly against OpenAI, while Stable Diffusion 3 and FLUX.1 Pro require the gateway to translate the OpenAI-compatible request into those providers.
 
 ## Adding More AI Models
 
@@ -146,7 +160,7 @@ To add support for additional models (Stable Diffusion, Midjourney, etc.):
 
 1. Install the necessary SDK (e.g., `@replicate/replicate`)
 2. Update `app/api/generate-image/route.ts` to handle the new model
-3. Add the model to the `MODELS` array in `components/ImageGenerator.tsx`
+3. Add the model to the `MODEL_PRESETS` array in `components/ImageGenerator.tsx`
 
 Example for Replicate:
 
