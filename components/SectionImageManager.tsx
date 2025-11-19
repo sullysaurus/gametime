@@ -45,7 +45,7 @@ export default function SectionImageManager({
         .select('id, image_url, model_name, created_at')
         .eq('section_id', section.id)
         .eq('status', 'approved')
-        .order('created_at', { ascending: false })
+        .order('approved_at', { ascending: false })
         .limit(10)
 
       if (error) throw error

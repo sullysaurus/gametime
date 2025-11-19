@@ -193,7 +193,7 @@ export default function AdminPage() {
 
     const { data, error } = await supabase
       .from('generated_images')
-      .select('*')
+      .select('id, section_id, prompt_id, image_url, model_name, model_provider, status, generation_settings, comparison_notes, created_at, is_global_reference')
       .eq('section_id', selectedSection.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
@@ -210,7 +210,7 @@ export default function AdminPage() {
 
     const { data, error} = await supabase
       .from('generated_images')
-      .select('*')
+      .select('id, section_id, image_url, model_name, status, created_at')
       .eq('section_id', selectedSection.id)
       .order('created_at', { ascending: false })
 
@@ -224,7 +224,7 @@ export default function AdminPage() {
   async function loadGlobalReferences() {
     const { data, error } = await supabase
       .from('generated_images')
-      .select('*, sections(name, section_code)')
+      .select('id, section_id, image_url, model_name, created_at, sections(name, section_code)')
       .eq('is_global_reference', true)
       .order('created_at', { ascending: false })
 
