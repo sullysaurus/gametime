@@ -328,6 +328,13 @@ export default function AdminPage() {
           <div className="lg:col-span-3 space-y-6">
             {selectedSection && activePrompt && (
               <>
+                {/* Primary Image Manager - Top Priority */}
+                <SectionImageManager
+                  section={selectedSection}
+                  onPrimaryImageChange={handleSectionImageChange}
+                  onGlobalReferenceAdded={loadGlobalReferences}
+                />
+
                 {/* Image Generator */}
                 <ImageGenerator
                   section={selectedSection}
@@ -352,12 +359,6 @@ export default function AdminPage() {
                   section={selectedSection}
                   activePrompt={activePrompt}
                   onPromptRestore={handlePromptUpdate}
-                />
-
-                <SectionImageManager
-                  section={selectedSection}
-                  onPrimaryImageChange={handleSectionImageChange}
-                  onGlobalReferenceAdded={loadGlobalReferences}
                 />
 
                 {/* Pending Images */}

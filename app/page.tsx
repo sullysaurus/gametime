@@ -105,25 +105,36 @@ export default function HomePage() {
     }
 
     const hydrated: Section[] = (sectionsData || []).map((section: any) => {
-      // Priority: approved AI images > pending AI images > local photos > current_image_url
-      let displayImageUrl: string | null = section.current_image_url
+      // Priority: approved AI images > uploaded primary image > pending AI images > local photos
+      let displayImageUrl: string | null = null
       let displayImageStatus: Section['display_image_status'] = 'current'
 
+      const approved = approvedMap.get(section.id)
+      const pending = pendingMap.get(section.id)
+
+      // Start with fallbacks (lowest priority)
       const localPhoto = getLocalPhotoUrl(section.section_code)
       if (localPhoto) {
         displayImageUrl = localPhoto
         displayImageStatus = 'current'
       }
 
-      const approved = approvedMap.get(section.id)
-      const pending = pendingMap.get(section.id)
+      // Pending AI images override local photos
+      if (pending) {
+        displayImageUrl = pending.image_url
+        displayImageStatus = 'pending'
+      }
 
+      // Uploaded primary image overrides pending (user intentionally set this)
+      if (section.current_image_url) {
+        displayImageUrl = section.current_image_url
+        displayImageStatus = 'current'
+      }
+
+      // Approved AI images override everything (highest quality, reviewed)
       if (approved) {
         displayImageUrl = approved.image_url
         displayImageStatus = 'approved'
-      } else if (pending) {
-        displayImageUrl = pending.image_url
-        displayImageStatus = 'pending'
       }
 
       return {
