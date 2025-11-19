@@ -515,7 +515,7 @@ export default function HomePage() {
             src="/sections/map.png"
             alt="Red Rocks Amphitheatre Map"
             fill
-            className="object-cover"
+            className="object-contain"
             priority
           />
 
