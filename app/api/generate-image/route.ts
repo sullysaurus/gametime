@@ -131,12 +131,16 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
     console.log(`Poll attempt ${attempts + 1}:`, result.status)
 
     if (result.status === 'Ready') {
-      if (!result.sample) {
+      // BFL API returns nested structure: result.result.sample
+      const imageUrl = result.result?.sample
+
+      if (!imageUrl) {
+        console.error('Unexpected response structure:', JSON.stringify(result, null, 2))
         throw new Error('No image URL in completed result')
       }
 
       // Download the image and convert to base64 for storage
-      const imageResponse = await fetch(result.sample)
+      const imageResponse = await fetch(imageUrl)
       if (!imageResponse.ok) {
         throw new Error('Failed to download generated image')
       }
@@ -148,7 +152,7 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
       return `data:${mimeType};base64,${base64}`
     }
 
-    if (result.status === 'Error') {
+    if (result.status === 'Error' || result.status === 'Failed') {
       throw new Error(`BFL generation error: ${result.error || 'Unknown error'}`)
     }
 
