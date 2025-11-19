@@ -524,30 +524,29 @@ export default function HomePage() {
 
         {/* Right Panel - Venue Map */}
         <div className="flex-1 relative bg-gray-900 overflow-hidden hidden md:block">
-          <div className="absolute inset-0 overflow-auto">
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <div
               style={{
                 transform: `scale(${mapZoom})`,
                 transformOrigin: 'center center',
                 transition: 'transform 0.3s ease',
+                position: 'relative',
                 width: '100%',
                 height: '100%',
-                minWidth: '100%',
-                minHeight: '100%',
               }}
             >
               <Image
                 src="/sections/map.png"
                 alt="Red Rocks Amphitheatre Map"
                 fill
-                className="object-contain"
+                className="object-cover"
                 priority
               />
             </div>
           </div>
 
           {/* Zoom Controls */}
-          <div className="absolute top-4 right-4 flex flex-col gap-1 bg-white rounded-lg shadow-xl overflow-hidden">
+          <div className="absolute top-4 right-4 flex flex-col gap-1 bg-white rounded-lg shadow-xl overflow-hidden z-10">
             <button
               onClick={handleZoomIn}
               className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200"
