@@ -44,6 +44,7 @@ export default function HomePage() {
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSection, setSelectedSection] = useState<Section | null>(null)
+  const [mapZoom, setMapZoom] = useState(1)
   const sliderRef = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -132,6 +133,18 @@ export default function HomePage() {
     }
   }
 
+  function handleZoomIn() {
+    setMapZoom(prev => Math.min(prev + 0.2, 3))
+  }
+
+  function handleZoomOut() {
+    setMapZoom(prev => Math.max(prev - 0.2, 0.5))
+  }
+
+  function handleZoomReset() {
+    setMapZoom(1)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -141,97 +154,113 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
-      {/* Top Nav */}
-      <div className="bg-black border-b border-gray-800 z-50 flex-shrink-0">
-        <div className="px-4 py-3 flex items-center justify-between">
-          {/* Mobile: Just logo and search icon */}
-          <div className="flex md:hidden items-center justify-between w-full">
-            <div className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="Gametime"
-                width={100}
-                height={28}
-                className="h-7 w-auto"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="text-gray-300">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="M21 21l-4.35-4.35"/>
-                </svg>
-              </button>
-              <Link href="/admin" className="text-gray-300 text-sm">Admin</Link>
-            </div>
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Top Nav - Desktop Only */}
+      <div className="hidden md:block bg-black border-b border-gray-800 z-50 flex-shrink-0">
+        <div className="px-4 py-3 flex items-center gap-6">
+          <div className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Gametime"
+              width={120}
+              height={32}
+              className="h-8 w-auto"
+            />
           </div>
-
-          {/* Desktop: Full nav */}
-          <div className="hidden md:flex items-center gap-6 w-full">
-            <div className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="Gametime"
-                width={120}
-                height={32}
-                className="h-8 w-auto"
+          <nav className="flex items-center gap-4 text-sm">
+            <a href="#" className="text-gray-300 hover:text-white transition-colors">Sports</a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors">Music</a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors">Comedy & Theater</a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors">Cities</a>
+            <a href="#" className="text-green-400 hover:text-green-300 transition-colors">World Cup 2026</a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors">Morgan Wallen</a>
+          </nav>
+          <div className="flex items-center gap-4 ml-auto">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search team, artist or venue"
+                className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm w-64 focus:outline-none focus:border-green-500"
               />
             </div>
-            <nav className="flex items-center gap-4 text-sm">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Sports</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Music</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Comedy & Theater</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Cities</a>
-              <a href="#" className="text-green-400 hover:text-green-300 transition-colors">World Cup 2026</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Morgan Wallen</a>
-            </nav>
-            <div className="flex items-center gap-4 ml-auto">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search team, artist or venue"
-                  className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm w-64 focus:outline-none focus:border-green-500"
-                />
-              </div>
-              <Link
-                href="/admin"
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-              >
-                Admin
-              </Link>
-              <button className="text-sm text-gray-300 hover:text-white transition-colors">
-                Log In
-              </button>
-            </div>
+            <Link
+              href="/admin"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+            >
+              Admin
+            </Link>
+            <button className="text-sm text-gray-300 hover:text-white transition-colors">
+              Log In
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main Content - Split Layout */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
+      <div className="flex flex-col md:flex-row flex-1 md:overflow-hidden relative">
         {/* Left Panel - Ticket List */}
         <div className="w-full md:w-[650px] border-r border-gray-800 overflow-y-auto bg-[#1a1a1a] flex-shrink-0">
-          {/* Back Button & Event Info */}
-          <div className="p-3 md:p-4 border-b border-gray-700">
-            <button className="text-gray-400 hover:text-white mb-2 md:mb-3 flex items-center gap-2">
+          {/* Mobile Header - Event Info */}
+          <div className="md:hidden bg-[#1a1a1a] p-4 border-b border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <button className="text-white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
+              <div className="text-center flex-1">
+                <h1 className="text-lg font-bold">Jason Isbell And The 400 Unit</h1>
+                <p className="text-sm text-gray-400">Red Rocks Amphitheatre</p>
+              </div>
+              <Link href="/admin" className="text-white text-xs">Admin</Link>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              <button className="flex-1 flex items-center justify-between bg-[#2a2a2a] border border-gray-700 rounded-lg px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span>📅</span>
+                  <span className="text-sm">Sat 5/2/26 · 7:00 PM</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <button className="flex items-center justify-between bg-[#2a2a2a] border border-gray-700 rounded-lg px-3 py-2.5 min-w-[80px]">
+                <div className="flex items-center gap-2">
+                  <span>👥</span>
+                  <span className="text-sm">2</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+
+            <span className="inline-block bg-white text-black px-4 py-2 rounded-full text-sm font-bold">
+              Includes Fees
+            </span>
+          </div>
+
+          {/* Desktop Header - Event Info */}
+          <div className="hidden md:block p-4 border-b border-gray-700">
+            <button className="text-gray-400 hover:text-white mb-3 flex items-center gap-2">
               <span>←</span>
             </button>
-            <h1 className="text-base md:text-lg font-bold mb-1">Jason Isbell And The 400 Unit</h1>
-            <p className="text-xs md:text-sm text-gray-400 mb-2 md:mb-3">Red Rocks Amphitheatre</p>
+            <h1 className="text-lg font-bold mb-1">Jason Isbell And The 400 Unit</h1>
+            <p className="text-sm text-gray-400 mb-3">Red Rocks Amphitheatre</p>
 
-            <div className="flex items-center gap-2 mb-2 md:mb-3 text-xs">
+            <div className="flex items-center gap-2 mb-3 text-xs">
               <div className="flex items-center gap-1.5 bg-black/30 px-2 py-1.5 rounded">
                 <span>📅</span>
-                <span className="text-[11px] md:text-xs">Sat 5/2/26 · 7:00 PM</span>
+                <span>Sat 5/2/26 · 7:00 PM</span>
               </div>
               <div className="flex items-center gap-1.5 bg-black/30 px-2 py-1.5 rounded">
                 <span>👥</span>
-                <span className="text-[11px] md:text-xs">2</span>
+                <span>2</span>
               </div>
             </div>
 
-            <span className="inline-block bg-white text-black px-2.5 md:px-3 py-1 rounded-full text-[11px] md:text-xs font-bold">
+            <span className="inline-block bg-white text-black px-3 py-1 rounded-full text-xs font-bold">
               Includes Fees
             </span>
           </div>
@@ -363,19 +392,6 @@ export default function HomePage() {
                         </span>
                       </div>
                     )}
-
-                    {/* Edit Image Icon - Bottom Left */}
-                    <Link
-                      href={`/admin?section=${section.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-1.5 md:bottom-2 left-1.5 md:left-2 p-1.5 md:p-2 bg-white/90 hover:bg-white rounded-full transition-colors group/edit"
-                      title="Edit image in admin"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-800 md:w-4 md:h-4">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                      </svg>
-                    </Link>
                   </div>
 
                   {/* Right Side - Content */}
@@ -508,23 +524,46 @@ export default function HomePage() {
 
         {/* Right Panel - Venue Map */}
         <div className="flex-1 relative bg-gray-900 overflow-hidden hidden md:block">
-          <Image
-            src="/sections/map.png"
-            alt="Red Rocks Amphitheatre Map"
-            fill
-            className="object-cover"
-            priority
-          />
+          <div className="absolute inset-0 overflow-auto">
+            <div
+              style={{
+                transform: `scale(${mapZoom})`,
+                transformOrigin: 'center center',
+                transition: 'transform 0.3s ease',
+                width: '100%',
+                height: '100%',
+                minWidth: '100%',
+                minHeight: '100%',
+              }}
+            >
+              <Image
+                src="/sections/map.png"
+                alt="Red Rocks Amphitheatre Map"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
 
           {/* Zoom Controls */}
           <div className="absolute top-4 right-4 flex flex-col gap-1 bg-white rounded-lg shadow-xl overflow-hidden">
-            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200">
+            <button
+              onClick={handleZoomIn}
+              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200"
+            >
               <span className="text-2xl text-gray-700 font-normal leading-none">+</span>
             </button>
-            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200">
+            <button
+              onClick={handleZoomOut}
+              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors border-b border-gray-200"
+            >
               <span className="text-2xl text-gray-700 font-normal leading-none">−</span>
             </button>
-            <button className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <button
+              onClick={handleZoomReset}
+              className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700">
                 <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
               </svg>
