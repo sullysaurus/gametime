@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
+
+// Server-side Supabase client with service role for storage uploads
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseAdmin = supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null
 
 // Black Forest Labs API configuration
 const BFL_API_URL = 'https://api.bfl.ai/v1'
@@ -158,35 +166,60 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
       const arrayBuffer = await imageResponse.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
 
-      // Compress image to WebP for optimal performance
-      // 80% quality provides excellent visual quality with ~60% size reduction
-      const compressedImage = await sharp(buffer)
-        .webp({ quality: 80 })
-        .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
-        .toBuffer()
+      // Try to use Supabase Storage if service role key is configured
+      if (supabaseAdmin) {
+        try {
+          console.log('Compressing image to WebP...')
 
-      // Upload to Supabase Storage instead of base64
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-      const filePath = `generated/${fileName}`
+          // Compress image to WebP for optimal performance
+          // 80% quality provides excellent visual quality with ~60% size reduction
+          const compressedImage = await sharp(buffer)
+            .webp({ quality: 80 })
+            .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+            .toBuffer()
 
-      const { error: uploadError } = await supabase.storage
-        .from('generated-images')
-        .upload(filePath, compressedImage, {
-          contentType: 'image/webp',
-          cacheControl: '31536000', // 1 year cache
-        })
+          // Upload to Supabase Storage using service role (has full permissions)
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+          const filePath = `generated/${fileName}`
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError)
-        throw new Error(`Failed to upload image: ${uploadError.message}`)
+          console.log(`Uploading image to storage: ${filePath}`)
+
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('generated-images')
+            .upload(filePath, compressedImage, {
+              contentType: 'image/webp',
+              cacheControl: '31536000', // 1 year cache
+              upsert: false
+            })
+
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError)
+            throw new Error(`Storage upload failed: ${uploadError.message}`)
+          }
+
+          console.log(`Image uploaded successfully: ${filePath}`)
+
+          // Get public URL
+          const { data: { publicUrl } } = supabaseAdmin.storage
+            .from('generated-images')
+            .getPublicUrl(filePath)
+
+          console.log(`Public URL: ${publicUrl}`)
+
+          return publicUrl
+        } catch (storageError) {
+          console.error('Storage upload failed, falling back to base64:', storageError)
+          // Fall through to base64 fallback below
+        }
+      } else {
+        console.warn('SUPABASE_SERVICE_ROLE_KEY not configured, using base64 fallback')
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('generated-images')
-        .getPublicUrl(filePath)
-
-      return publicUrl
+      // Fallback to base64 if storage upload fails or service key not configured
+      console.log('Using base64 fallback...')
+      const base64 = Buffer.from(buffer).toString('base64')
+      const mimeType = payload.output_format === 'png' ? 'image/png' : 'image/jpeg'
+      return `data:${mimeType};base64,${base64}`
     }
 
     if (result.status === 'Error' || result.status === 'Failed') {
