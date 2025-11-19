@@ -34,10 +34,12 @@ export default function ImageComparison({
 }: Props) {
   const [notes, setNotes] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'approved' | 'rejected' | null>(null)
   const [isGlobalRef, setIsGlobalRef] = useState(generatedImage.is_global_reference)
 
   async function handleStatusUpdate(status: 'approved' | 'rejected') {
     setUpdating(true)
+    setPendingAction(status)
     try {
       const response = await fetch(
         `/api/images/${generatedImage.id}/status`,
@@ -64,6 +66,7 @@ export default function ImageComparison({
       alert(error.message || 'Failed to update status')
     } finally {
       setUpdating(false)
+      setPendingAction(null)
     }
   }
 
@@ -227,9 +230,37 @@ export default function ImageComparison({
             }}
             disabled={updating}
             type="button"
-            className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+              pendingAction === 'approved'
+                ? 'bg-green-700 cursor-wait'
+                : updating
+                ? 'bg-gray-700 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 cursor-pointer'
+            }`}
           >
-            {updating ? 'Updating...' : '✓ Approve & Set as Current'}
+            {pendingAction === 'approved' ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Approving...
+              </span>
+            ) : (
+              '✓ Approve & Set as Current'
+            )}
           </button>
           <button
             onClick={(e) => {
@@ -239,9 +270,37 @@ export default function ImageComparison({
             }}
             disabled={updating}
             type="button"
-            className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+              pendingAction === 'rejected'
+                ? 'bg-red-700 cursor-wait'
+                : updating
+                ? 'bg-gray-700 cursor-not-allowed'
+                : 'bg-red-600 hover:bg-red-700 cursor-pointer'
+            }`}
           >
-            {updating ? 'Updating...' : '✗ Reject'}
+            {pendingAction === 'rejected' ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Rejecting...
+              </span>
+            ) : (
+              '✗ Reject'
+            )}
           </button>
         </div>
       </div>
