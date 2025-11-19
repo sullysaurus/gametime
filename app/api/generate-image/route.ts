@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 // Initialize OpenAI client with Vercel AI Gateway
 const openai = new OpenAI({
   apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || 'dummy-key-for-build',
-  baseURL: process.env.AI_GATEWAY_URL || 'https://gateway.vercel.ai/v1', // Vercel AI Gateway
+  baseURL: process.env.AI_GATEWAY_URL || 'https://ai-gateway.vercel.sh/v1', // Vercel AI Gateway
 })
 
 function getBackgroundValue(

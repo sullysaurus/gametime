@@ -151,7 +151,7 @@ Access the admin dashboard at [http://localhost:3000/admin](http://localhost:300
    NEXT_PUBLIC_SUPABASE_URL=https://aamjoctqvztopmmultsl.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    AI_GATEWAY_API_KEY=vck_3tH9HOmrKG30QUurK3hdz2TnbwWFY2g7vWeDIYT1yiBxCCdmOf1Cti7V
-   AI_GATEWAY_URL=https://gateway.vercel.ai/v1
+   AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
    ```
 
 4. **Deploy!**
