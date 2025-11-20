@@ -9,6 +9,8 @@ import ImageComparison from '@/components/ImageComparison'
 import PromptEditor from '@/components/PromptEditor'
 import PromptHistory from '@/components/PromptHistory'
 import SectionImageManager from '@/components/SectionImageManager'
+import SectionCarousel from '@/components/SectionCarousel'
+import Collapsible from '@/components/Collapsible'
 
 type Section = {
   id: string
@@ -116,8 +118,6 @@ export default function AdminPage() {
   const [globalReferences, setGlobalReferences] = useState<GeneratedImage[]>([])
 
   // UI state
-  const [showAllImages, setShowAllImages] = useState(true)
-  const [showAllPrompts, setShowAllPrompts] = useState(false)
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
@@ -388,115 +388,107 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Section Selector Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-              <h2 className="text-lg font-semibold mb-4">Sections</h2>
-              <div className="space-y-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setSelectedSection(section)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      selectedSection?.id === section.id
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium">{section.name}</div>
-                    <div className="text-xs opacity-75">{section.section_code}</div>
-                  </button>
-                ))}
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Section Carousel */}
+        <SectionCarousel
+          sections={sections}
+          selectedSection={selectedSection}
+          onSelectSection={setSelectedSection}
+        />
+
+        {/* Main Content */}
+        {selectedSection && activePrompt && (
+          <div className="space-y-6">
+            {/* Primary Image Manager - Top Priority */}
+            <SectionImageManager
+              section={selectedSection}
+              onPrimaryImageChange={handleSectionImageChange}
+              onGlobalReferenceAdded={loadGlobalReferences}
+            />
+
+            {/* Image Generator */}
+            <Collapsible
+              title="Generate New Image"
+              description="Create AI-generated images using FLUX models"
+              defaultOpen={true}
+            >
+              <ImageGenerator
+                section={selectedSection}
+                prompt={activePrompt}
+                onImageGenerated={handleImageGenerated}
+                referenceImageUrl={hideDefaultReference ? null : referenceImageUrl}
+                selectedReferenceImageUrl={selectedReferenceImageUrl}
+                globalReferences={globalReferences}
+                onClearReference={handleClearReference}
+                onSelectGlobalReference={handleUseAsReference}
+                onRemoveGlobalReference={handleRemoveGlobalReference}
+              />
+            </Collapsible>
+
+            {/* Prompt Editor */}
+            <Collapsible
+              title="Edit Prompt"
+              description={`Current prompt for ${selectedSection.name}`}
+              defaultOpen={true}
+            >
+              <PromptEditor
+                section={selectedSection}
+                prompt={activePrompt}
+                onPromptUpdate={handlePromptUpdate}
+              />
+            </Collapsible>
+
+            {/* Prompt History */}
+            <Collapsible
+              title="Prompt History"
+              description="View and restore previous prompt versions"
+              defaultOpen={false}
+            >
+              <PromptHistory
+                section={selectedSection}
+                activePrompt={activePrompt}
+                onPromptRestore={handlePromptUpdate}
+              />
+            </Collapsible>
+
+            {/* Pending Images */}
+            {pendingImages.length > 0 && (
+              <Collapsible
+                title="Pending Reviews"
+                description="Review and approve/reject generated images"
+                badge={`${pendingImages.length}`}
+                defaultOpen={true}
+              >
+                <div className="space-y-4">
+                  {pendingImages.map((image) => (
+                    <ImageComparison
+                      key={image.id}
+                      section={selectedSection}
+                      generatedImage={image}
+                      onStatusChange={handleImageStatusChange}
+                      onUseAsReference={handleUseAsReference}
+                    />
+                  ))}
+                </div>
+              </Collapsible>
+            )}
+
+            {pendingImages.length === 0 && (
+              <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
+                <p className="text-gray-400">
+                  No pending images. Generate a new image above to get started.
+                </p>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {selectedSection && activePrompt && (
-              <>
-                {/* Primary Image Manager - Top Priority */}
-                <SectionImageManager
-                  section={selectedSection}
-                  onPrimaryImageChange={handleSectionImageChange}
-                  onGlobalReferenceAdded={loadGlobalReferences}
-                />
-
-                {/* Image Generator */}
-                <ImageGenerator
-                  section={selectedSection}
-                  prompt={activePrompt}
-                  onImageGenerated={handleImageGenerated}
-                  referenceImageUrl={hideDefaultReference ? null : referenceImageUrl}
-                  selectedReferenceImageUrl={selectedReferenceImageUrl}
-                  globalReferences={globalReferences}
-                  onClearReference={handleClearReference}
-                  onSelectGlobalReference={handleUseAsReference}
-                  onRemoveGlobalReference={handleRemoveGlobalReference}
-                />
-
-                {/* Prompt Editor */}
-                <PromptEditor
-                  section={selectedSection}
-                  prompt={activePrompt}
-                  onPromptUpdate={handlePromptUpdate}
-                />
-
-                {/* Prompt History */}
-                <PromptHistory
-                  section={selectedSection}
-                  activePrompt={activePrompt}
-                  onPromptRestore={handlePromptUpdate}
-                />
-
-                {/* Pending Images */}
-                {pendingImages.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Pending Reviews</h2>
-                    {pendingImages.map((image) => (
-                      <ImageComparison
-                        key={image.id}
-                        section={selectedSection}
-                        generatedImage={image}
-                        onStatusChange={handleImageStatusChange}
-                        onUseAsReference={handleUseAsReference}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {pendingImages.length === 0 && (
-                  <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
-                    <p className="text-gray-400">
-                      No pending images. Generate a new image above to get started.
-                    </p>
-                  </div>
-                )}
-
-                {/* Unified Prompt Library */}
-                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-xl font-semibold">📝 Unified Prompt Library</h2>
-                      <p className="text-sm text-gray-400 mt-1">
-                        All prompts from all sections - Find successful prompts to reuse
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const showPrompts = !showAllPrompts
-                        setShowAllPrompts(showPrompts)
-                      }}
-                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-                    >
-                      {showAllPrompts ? 'Hide' : `Show (${allPrompts.length})`}
-                    </button>
-                  </div>
-
-                  {showAllPrompts && (
-                    <div className="space-y-4 mt-4">
+            {/* Unified Prompt Library */}
+            <Collapsible
+              title="📝 Unified Prompt Library"
+              description="All prompts from all sections - Find successful prompts to reuse"
+              badge={`${allPrompts.length}`}
+              defaultOpen={false}
+            >
+              <div className="space-y-4">
                       {allPrompts.length === 0 ? (
                         <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
                           <p className="text-gray-400 mb-2">No prompts found.</p>
@@ -617,31 +609,19 @@ export default function AdminPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* All Generated Images - Unified Library */}
-                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-xl font-semibold">🎨 Unified Image Library</h2>
-                      <p className="text-sm text-gray-400 mt-1">
-                        All images from all sections - Click "Use as Reference" on any image
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowAllImages(!showAllImages)}
-                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-                    >
-                      {showAllImages ? 'Hide' : `Show (${allImages.length})`}
-                    </button>
                   </div>
+                )}
+              </div>
+            </Collapsible>
 
-                  {showAllImages && (
-                    <div className="space-y-4 mt-4">
+            {/* All Generated Images - Unified Library */}
+            <Collapsible
+              title="🎨 Unified Image Library"
+              description="All images from all sections - Click 'Use as Reference' on any image"
+              badge={`${allImages.length}`}
+              defaultOpen={false}
+            >
+              <div className="space-y-4">
                       {allImages.length === 0 ? (
                         <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
                           <p className="text-gray-400 mb-2">No images generated yet.</p>
@@ -696,15 +676,12 @@ export default function AdminPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                  </div>
+                )}
+              </div>
+            </Collapsible>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
