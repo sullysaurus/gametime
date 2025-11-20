@@ -15,6 +15,7 @@ type Props = {
   section: Section
   onPrimaryImageChange: (newUrl: string | null) => void
   onGlobalReferenceAdded?: () => void
+  localFallbackUrl?: string | null
 }
 
 type ApprovedImage = {
@@ -28,6 +29,7 @@ export default function SectionImageManager({
   section,
   onPrimaryImageChange,
   onGlobalReferenceAdded,
+  localFallbackUrl,
 }: Props) {
   const [approvedImages, setApprovedImages] = useState<ApprovedImage[]>([])
   const [loading, setLoading] = useState(false)
@@ -169,6 +171,11 @@ export default function SectionImageManager({
     }
   }
 
+  // Determine which image to display
+  const displayImageUrl = section.current_image_url || localFallbackUrl
+  const isCustomImage = !!section.current_image_url
+  const hasLocalFallback = !section.current_image_url && !!localFallbackUrl
+
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
       <h3 className="text-lg font-semibold mb-4">Primary Image Manager</h3>
@@ -177,30 +184,35 @@ export default function SectionImageManager({
       <div className="mb-6">
         <div className="text-sm font-medium text-gray-300 mb-2">
           Current Primary Image
+          {hasLocalFallback && (
+            <span className="ml-2 text-xs text-yellow-400">(Local Fallback - Upload to customize)</span>
+          )}
         </div>
         <div className="relative aspect-video bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-          {section.current_image_url ? (
+          {displayImageUrl ? (
             <>
               <Image
-                src={section.current_image_url}
+                src={displayImageUrl}
                 alt={`Primary ${section.name}`}
                 fill
                 className="object-cover"
               />
-              <div className="absolute top-2 right-2 flex gap-2">
-                <button
-                  onClick={handlePinAsGlobalReference}
-                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition-colors"
-                >
-                  📌 Pin Globally
-                </button>
-                <button
-                  onClick={handleRemovePrimaryImage}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
+              {isCustomImage && (
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button
+                    onClick={handlePinAsGlobalReference}
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition-colors"
+                  >
+                    📌 Pin Globally
+                  </button>
+                  <button
+                    onClick={handleRemovePrimaryImage}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">

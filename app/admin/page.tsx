@@ -470,6 +470,7 @@ export default function AdminPage() {
               section={selectedSection}
               onPrimaryImageChange={handleSectionImageChange}
               onGlobalReferenceAdded={loadGlobalReferences}
+              localFallbackUrl={getLocalPhotoUrl(selectedSection.section_code)}
             />
 
             {/* Image Generator */}
@@ -483,7 +484,7 @@ export default function AdminPage() {
                 prompt={activePrompt}
                 settings={generationSettings}
                 onImageGenerated={handleImageGenerated}
-                referenceImageUrl={selectedSection.current_image_url}
+                referenceImageUrl={selectedSection.current_image_url || getLocalPhotoUrl(selectedSection.section_code)}
                 selectedReferenceImageUrl={selectedReferenceImageUrl}
                 globalReferences={globalReferences}
                 onClearReference={handleClearReference}
