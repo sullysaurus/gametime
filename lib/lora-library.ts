@@ -101,58 +101,159 @@ export type VenuePreset = {
 }
 
 export const RED_ROCKS_PRESETS: VenuePreset[] = [
+  // Front Sections - Close to stage
   {
-    id: 'red-rocks-main-stage',
-    name: 'Red Rocks - Main Stage View',
-    description: 'Optimized for stage close-ups with dramatic lighting and production elements',
-    loras: [
-      { path: 'XLabs-AI/flux-RealismLora', scale: 0.8 },
-      { path: 'Purz/edm-festival-stage', scale: 1.0 }
-    ],
-    recommendedPromptAdditions: '3dm_f35t1v47, professional concert photography, stage lighting',
-    venueSection: 'Stage View'
-  },
-
-  {
-    id: 'red-rocks-crowd-front',
-    name: 'Red Rocks - Front Section Crowd',
-    description: 'Captures crowd energy from front sections with stage visibility',
+    id: 'front-left',
+    name: 'Front Left',
+    description: 'Stage left perspective, close crowd energy with stage visibility',
     loras: [
       { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 1.0 },
-      { path: 'XLabs-AI/flux-RealismLora', scale: 0.7 }
+      { path: 'Purz/edm-festival-stage', scale: 0.9 }
     ],
-    recommendedPromptAdditions: 'Super Realism, concert crowd, energetic atmosphere, professional photography',
-    venueSection: 'Front Rows'
+    recommendedPromptAdditions: 'Super Realism, concert crowd, stage left view, energetic atmosphere, 3dm_f35t1v47',
+    venueSection: 'Front Left'
   },
 
   {
-    id: 'red-rocks-mid-section',
-    name: 'Red Rocks - Mid-Section Perspective',
-    description: 'Balanced view of stage and crowd with natural rock formations',
+    id: 'front-center',
+    name: 'Front Center',
+    description: 'Center front perspective, optimal stage view with front crowd',
+    loras: [
+      { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 1.0 },
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.8 }
+    ],
+    recommendedPromptAdditions: 'Super Realism, concert crowd, center view, energetic atmosphere, professional photography',
+    venueSection: 'Front Center'
+  },
+
+  {
+    id: 'front-right',
+    name: 'Front Right',
+    description: 'Stage right perspective, close crowd energy with stage visibility',
+    loras: [
+      { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 1.0 },
+      { path: 'Purz/edm-festival-stage', scale: 0.9 }
+    ],
+    recommendedPromptAdditions: 'Super Realism, concert crowd, stage right view, energetic atmosphere, 3dm_f35t1v47',
+    venueSection: 'Front Right'
+  },
+
+  // Middle Sections - Balanced views
+  {
+    id: 'middle-left',
+    name: 'Middle Left',
+    description: 'Mid-level left view, balanced stage and crowd with rock formations',
+    loras: [
+      { path: 'prithivMLmods/Canopus-LoRA-Flux-UltraRealism-2.0', scale: 0.9 },
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.8 }
+    ],
+    recommendedPromptAdditions: 'Ultra realistic, Red Rocks amphitheater, natural rock formations, left perspective',
+    venueSection: 'Middle Left'
+  },
+
+  {
+    id: 'middle-center',
+    name: 'Middle Center',
+    description: 'Perfect center mid-level view, classic Red Rocks perspective',
     loras: [
       { path: 'prithivMLmods/Canopus-LoRA-Flux-UltraRealism-2.0', scale: 0.9 },
       { path: 'Purz/edm-festival-stage', scale: 0.8 }
     ],
-    recommendedPromptAdditions: 'Ultra realistic, Red Rocks amphitheater, natural rock formations, concert atmosphere',
-    venueSection: 'Mid-Section'
+    recommendedPromptAdditions: 'Ultra realistic, Red Rocks amphitheater, natural rock formations, center perspective, concert atmosphere',
+    venueSection: 'Middle Center'
   },
 
   {
-    id: 'red-rocks-upper-rows',
-    name: 'Red Rocks - Upper Rows Wide Shot',
-    description: 'Sweeping view capturing venue scale, crowd, and Colorado landscape',
+    id: 'middle-right',
+    name: 'Middle Right',
+    description: 'Mid-level right view, balanced stage and crowd with rock formations',
+    loras: [
+      { path: 'prithivMLmods/Canopus-LoRA-Flux-UltraRealism-2.0', scale: 0.9 },
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.8 }
+    ],
+    recommendedPromptAdditions: 'Ultra realistic, Red Rocks amphitheater, natural rock formations, right perspective',
+    venueSection: 'Middle Right'
+  },
+
+  // Back Sections - Wide panoramic views
+  {
+    id: 'back-left',
+    name: 'Back Left',
+    description: 'Upper left wide view, sweeping venue scale with Colorado landscape',
     loras: [
       { path: 'XLabs-AI/flux-RealismLora', scale: 0.9 },
       { path: 'strangerzonehf/Flux-Kontext-Ultimate-LoRA', scale: 0.6 }
     ],
-    recommendedPromptAdditions: 'professional photography, wide angle, dramatic lighting, Colorado landscape',
-    venueSection: 'Upper Rows'
+    recommendedPromptAdditions: 'professional photography, wide angle, dramatic lighting, Colorado landscape, left panorama',
+    venueSection: 'Back Left'
   },
 
   {
-    id: 'red-rocks-artistic',
-    name: 'Red Rocks - Artistic/Cinematic',
-    description: 'Dramatic, film-grade concert photography with artistic lighting',
+    id: 'back-center',
+    name: 'Back Center',
+    description: 'Upper center wide shot, classic panoramic Red Rocks view',
+    loras: [
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.9 },
+      { path: 'strangerzonehf/Flux-Kontext-Ultimate-LoRA', scale: 0.6 }
+    ],
+    recommendedPromptAdditions: 'professional photography, wide angle, dramatic lighting, Colorado landscape, center panorama',
+    venueSection: 'Back Center'
+  },
+
+  {
+    id: 'back-right',
+    name: 'Back Right',
+    description: 'Upper right wide view, sweeping venue scale with Colorado landscape',
+    loras: [
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.9 },
+      { path: 'strangerzonehf/Flux-Kontext-Ultimate-LoRA', scale: 0.6 }
+    ],
+    recommendedPromptAdditions: 'professional photography, wide angle, dramatic lighting, Colorado landscape, right panorama',
+    venueSection: 'Back Right'
+  },
+
+  // Special Sections
+  {
+    id: 'general-admission',
+    name: 'General Admission',
+    description: 'Dynamic GA floor experience with immersive crowd energy',
+    loras: [
+      { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 1.0 },
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.8 }
+    ],
+    recommendedPromptAdditions: 'Super Realism, concert crowd, GA floor, immersive perspective, energetic atmosphere',
+    venueSection: 'General Admission'
+  },
+
+  {
+    id: 'pit',
+    name: 'Pit',
+    description: 'Closest to stage, intense energy with dramatic stage lighting',
+    loras: [
+      { path: 'Purz/edm-festival-stage', scale: 1.0 },
+      { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 0.9 }
+    ],
+    recommendedPromptAdditions: '3dm_f35t1v47, Super Realism, pit section, extreme close-up, stage lighting, intense energy',
+    venueSection: 'Pit'
+  },
+
+  {
+    id: 'standing-room-only',
+    name: 'Standing Room Only',
+    description: 'Back standing area with full venue visibility and atmosphere',
+    loras: [
+      { path: 'XLabs-AI/flux-RealismLora', scale: 0.9 },
+      { path: 'imagepipeline/Flux-Realism-LoRA', scale: 0.8 }
+    ],
+    recommendedPromptAdditions: 'professional photography, standing room view, full venue, concert atmosphere, Red Rocks',
+    venueSection: 'Standing Room Only'
+  },
+
+  // Artistic/Universal
+  {
+    id: 'artistic-cinematic',
+    name: 'Artistic/Cinematic',
+    description: 'Dramatic, film-grade concert photography for any section',
     loras: [
       { path: 'strangerzonehf/Flux-Kontext-Ultimate-LoRA', scale: 0.8 },
       { path: 'strangerzonehf/Flux-Super-Realism-LoRA', scale: 0.7 }
