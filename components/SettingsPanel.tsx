@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import Collapsible from './Collapsible'
+import { LORA_MODELS, RED_ROCKS_PRESETS, type LoRAWeight } from '@/lib/lora-library'
 
 type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
 
-export type LoRAWeight = {
-  path: string
-  scale: number
-}
+// Re-export for backward compatibility
+export type { LoRAWeight }
 
 export type GenerationSettings = {
   model: FluxModel
@@ -534,7 +533,7 @@ export default function SettingsPanel({
                 <div className="border-t border-gray-700 pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs text-gray-300 font-medium">
-                      LoRA Models (Hyper-Realistic)
+                      LoRA Models (Professional Enhancement)
                     </label>
                     <button
                       onClick={() => {
@@ -543,76 +542,171 @@ export default function SettingsPanel({
                       }}
                       className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
                     >
-                      + Add LoRA
+                      + Add Custom
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 mb-3">
-                    Add LoRA models for style fine-tuning (e.g., hyper-realism, photography)
+                    Enhance image quality with curated LoRA models for concert photography
                   </p>
 
+                  {/* Preset Selector */}
+                  <div className="mb-3">
+                    <label className="text-xs text-gray-400 block mb-1">
+                      Quick Presets (Red Rocks Optimized)
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const preset = RED_ROCKS_PRESETS.find(p => p.id === e.target.value)
+                        if (preset) {
+                          updateSetting('loras', preset.loras)
+                        }
+                      }}
+                      className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs"
+                      defaultValue=""
+                    >
+                      <option value="">Select a preset...</option>
+                      {RED_ROCKS_PRESETS.map(preset => (
+                        <option key={preset.id} value={preset.id}>
+                          {preset.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Pre-configured LoRA combinations for different Red Rocks sections
+                    </p>
+                  </div>
+
                   {settings.loras.length === 0 ? (
-                    <div className="text-xs text-gray-500 italic py-2">
-                      No LoRAs added. Click &quot;+ Add LoRA&quot; to start.
+                    <div className="text-xs text-gray-500 italic py-2 bg-gray-800 border border-gray-700 rounded p-3">
+                      No LoRAs selected. Use the preset selector above or click &quot;+ Add Custom&quot;
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {settings.loras.map((lora, index) => (
-                        <div key={index} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <input
-                              type="text"
-                              value={lora.path}
-                              onChange={(e) => {
-                                const newLoras = [...settings.loras]
-                                newLoras[index].path = e.target.value
-                                updateSetting('loras', newLoras)
-                              }}
-                              placeholder="LoRA path (e.g., model-id or URL)"
-                              className="flex-1 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs placeholder:text-gray-600"
-                            />
-                            <button
-                              onClick={() => {
-                                const newLoras = settings.loras.filter((_, i) => i !== index)
-                                updateSetting('loras', newLoras)
-                              }}
-                              className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-400 block mb-1">
-                              Weight: {lora.scale.toFixed(2)}
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="2"
-                              step="0.1"
-                              value={lora.scale}
-                              onChange={(e) => {
-                                const newLoras = [...settings.loras]
-                                newLoras[index].scale = parseFloat(e.target.value)
-                                updateSetting('loras', newLoras)
-                              }}
-                              className="w-full"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>Subtle (0)</span>
-                              <span>Strong (2)</span>
+                      {settings.loras.map((lora, index) => {
+                        // Find matching model from library
+                        const matchedModel = LORA_MODELS.find(m => m.path === lora.path)
+
+                        return (
+                          <div key={index} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex-1">
+                                {matchedModel && (
+                                  <div className="text-xs font-medium text-blue-400 mb-1">
+                                    {matchedModel.name}
+                                  </div>
+                                )}
+                                <select
+                                  value={lora.path}
+                                  onChange={(e) => {
+                                    const newLoras = [...settings.loras]
+                                    const selectedModel = LORA_MODELS.find(m => m.path === e.target.value)
+                                    newLoras[index].path = e.target.value
+                                    // Auto-set recommended scale
+                                    if (selectedModel) {
+                                      newLoras[index].scale = selectedModel.recommendedScale
+                                    }
+                                    updateSetting('loras', newLoras)
+                                  }}
+                                  className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs"
+                                >
+                                  <option value="">Select a LoRA model...</option>
+                                  <optgroup label="Concert & Stage">
+                                    {LORA_MODELS.filter(m => m.category === 'concert').map(model => (
+                                      <option key={model.id} value={model.path}>
+                                        {model.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  <optgroup label="Photorealism">
+                                    {LORA_MODELS.filter(m => m.category === 'realism').map(model => (
+                                      <option key={model.id} value={model.path}>
+                                        {model.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  <optgroup label="Cinematic">
+                                    {LORA_MODELS.filter(m => m.category === 'cinematic').map(model => (
+                                      <option key={model.id} value={model.path}>
+                                        {model.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  <optgroup label="Photography">
+                                    {LORA_MODELS.filter(m => m.category === 'photography').map(model => (
+                                      <option key={model.id} value={model.path}>
+                                        {model.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                </select>
+                                {matchedModel && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {matchedModel.description}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const newLoras = settings.loras.filter((_, i) => i !== index)
+                                  updateSetting('loras', newLoras)
+                                }}
+                                className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded shrink-0"
+                              >
+                                Remove
+                              </button>
+                            </div>
+
+                            {/* Custom path input for manual entry */}
+                            {!matchedModel && lora.path !== '' && (
+                              <input
+                                type="text"
+                                value={lora.path}
+                                onChange={(e) => {
+                                  const newLoras = [...settings.loras]
+                                  newLoras[index].path = e.target.value
+                                  updateSetting('loras', newLoras)
+                                }}
+                                placeholder="Custom LoRA path (HuggingFace ID or URL)"
+                                className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs placeholder:text-gray-600"
+                              />
+                            )}
+
+                            <div>
+                              <label className="text-xs text-gray-400 block mb-1">
+                                Weight: {lora.scale.toFixed(2)}
+                                {matchedModel && ` (Recommended: ${matchedModel.recommendedScale.toFixed(1)})`}
+                              </label>
+                              <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                value={lora.scale}
+                                onChange={(e) => {
+                                  const newLoras = [...settings.loras]
+                                  newLoras[index].scale = parseFloat(e.target.value)
+                                  updateSetting('loras', newLoras)
+                                }}
+                                className="w-full"
+                              />
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Subtle (0)</span>
+                                <span>Strong (2)</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
 
                   <div className="mt-3 text-xs text-gray-500 bg-gray-800 border border-gray-700 rounded p-2">
-                    <div className="font-medium text-gray-400 mb-1">Recommended for Venues:</div>
+                    <div className="font-medium text-gray-400 mb-1">💡 Tips:</div>
                     <div className="space-y-1 text-gray-500">
-                      <div>• Hyper-realism LoRAs (weight: 0.8-1.2)</div>
-                      <div>• Photography enhancement LoRAs</div>
-                      <div>• Architectural detail LoRAs</div>
+                      <div>• Start with a preset for best results</div>
+                      <div>• Combine realism + concert LoRAs for optimal quality</div>
+                      <div>• Lower weights (0.6-0.8) for subtle enhancement</div>
+                      <div>• Higher weights (1.0-1.5) for dramatic effect</div>
                     </div>
                   </div>
                 </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
+import * as fal from '@fal-ai/serverless-client'
 
 // Server-side Supabase client with service role for storage uploads
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -10,7 +11,13 @@ const supabaseAdmin = supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null
 
-// Black Forest Labs API configuration
+// fal.ai API configuration
+const FAL_API_KEY = process.env.FAL_API_KEY || ''
+if (FAL_API_KEY) {
+  fal.config({ credentials: FAL_API_KEY })
+}
+
+// Black Forest Labs API configuration (fallback for non-LoRA models)
 const BFL_API_URL = 'https://api.bfl.ai/v1'
 const BFL_API_KEY = process.env.BFL_API_KEY || ''
 
@@ -230,6 +237,117 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
   throw new Error('Generation timeout - exceeded maximum polling attempts')
 }
 
+async function generateWithFal(payload: GenerateImagePayload): Promise<string> {
+  console.log('Generating image with fal.ai flux-lora...', {
+    prompt: payload.prompt.substring(0, 100),
+    loras: payload.loras,
+    steps: payload.steps,
+    guidance: payload.guidance,
+  })
+
+  // Build fal.ai request
+  const input: Record<string, any> = {
+    prompt: payload.prompt,
+    num_inference_steps: payload.steps || 28,
+    guidance_scale: payload.guidance || 3.5,
+    num_images: 1,
+    enable_safety_checker: true,
+    output_format: payload.output_format || 'jpeg',
+  }
+
+  // Add seed if provided
+  if (payload.seed !== null && payload.seed !== undefined) {
+    input.seed = payload.seed
+  }
+
+  // Add LoRAs if provided
+  if (payload.loras && payload.loras.length > 0) {
+    input.loras = payload.loras
+  }
+
+  // Handle image size - fal.ai prefers named sizes but also accepts width/height
+  if (payload.aspect_ratio) {
+    input.image_size = payload.aspect_ratio
+  } else {
+    input.image_size = {
+      width: payload.width || 1024,
+      height: payload.height || 1024,
+    }
+  }
+
+  // Call fal.ai API
+  const result = await fal.subscribe('fal-ai/flux-lora', {
+    input,
+    logs: true,
+    onQueueUpdate: (update) => {
+      if (update.status === 'IN_PROGRESS') {
+        console.log('fal.ai generation in progress...')
+      }
+    },
+  }) as any
+
+  // Get image URL from result
+  const imageUrl = result.images?.[0]?.url
+  if (!imageUrl) {
+    console.error('Unexpected fal.ai response:', JSON.stringify(result, null, 2))
+    throw new Error('No image URL in fal.ai result')
+  }
+
+  console.log('fal.ai image generated:', imageUrl)
+
+  // Download the image
+  const imageResponse = await fetch(imageUrl)
+  if (!imageResponse.ok) {
+    throw new Error('Failed to download generated image from fal.ai')
+  }
+
+  const arrayBuffer = await imageResponse.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  // Require Supabase Storage
+  if (!supabaseAdmin) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured. Image storage is required.')
+  }
+
+  console.log('Compressing image to WebP...')
+
+  // Compress image to WebP
+  const compressedImage = await sharp(buffer)
+    .webp({ quality: 80 })
+    .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+    .toBuffer()
+
+  // Upload to Supabase Storage
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+  const filePath = `generated/${fileName}`
+
+  console.log(`Uploading image to storage: ${filePath}`)
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('generated-images')
+    .upload(filePath, compressedImage, {
+      contentType: 'image/webp',
+      cacheControl: '31536000',
+      upsert: false
+    })
+
+  if (uploadError) {
+    console.error('Storage upload error:', uploadError)
+    throw new Error(`Storage upload failed: ${uploadError.message}`)
+  }
+
+  console.log(`Image uploaded successfully: ${filePath}`)
+
+  // Get public URL
+  const { data: { publicUrl } } = supabaseAdmin.storage
+    .from('generated-images')
+    .getPublicUrl(filePath)
+
+  console.log(`Public URL: ${publicUrl}`)
+
+  return publicUrl
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -250,8 +368,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate BFL API key
-    if (!BFL_API_KEY) {
+    // Validate API keys based on model
+    const useFal = model === 'flux-dev'
+    if (useFal && !FAL_API_KEY) {
+      return NextResponse.json(
+        { error: 'FAL_API_KEY not configured for flux-dev model' },
+        { status: 500 }
+      )
+    }
+    if (!useFal && !BFL_API_KEY) {
       return NextResponse.json(
         { error: 'BFL_API_KEY not configured' },
         { status: 500 }
@@ -260,15 +385,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generating image for section ${sectionId}, prompt ${promptId}`)
 
-    // Generate image using BFL
-    const imageUrl = await generateWithBFL({
-      ...fluxParams,
-      prompt,
-      model: model as FluxModel,
-      provider,
-      sectionId,
-      promptId,
-    })
+    // Generate image using fal.ai for flux-dev (LoRA support), BFL for others
+    const imageUrl = useFal
+      ? await generateWithFal({
+          ...fluxParams,
+          prompt,
+          model: model as FluxModel,
+          provider: 'fal.ai',
+          sectionId,
+          promptId,
+        })
+      : await generateWithBFL({
+          ...fluxParams,
+          prompt,
+          model: model as FluxModel,
+          provider,
+          sectionId,
+          promptId,
+        })
 
     // Save to Supabase
     const { data: generatedImage, error: dbError } = await supabase
@@ -278,7 +412,7 @@ export async function POST(request: NextRequest) {
         prompt_id: promptId,
         image_url: imageUrl,
         model_name: model,
-        model_provider: provider,
+        model_provider: useFal ? 'fal.ai' : provider,
         status: 'pending',
         generation_settings: {
           ...fluxParams,
