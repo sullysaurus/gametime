@@ -72,9 +72,9 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
                       : 'ring-2 ring-gray-700 hover:ring-gray-600'
                   }`}
                 >
-                  <button
+                  <div
                     onClick={() => onSelectSection(section)}
-                    className="w-full"
+                    className="w-full cursor-pointer"
                   >
                     {/* Image */}
                     <div className="relative aspect-video bg-gray-800">
@@ -132,7 +132,7 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
                         </div>
                       )}
                     </div>
-                  </button>
+                  </div>
 
                   {/* Section Info */}
                   <div className={`p-3 text-left ${
