@@ -255,6 +255,15 @@ export default function AdminPage() {
     setActivePrompt(updatedPrompt)
   }
 
+  function handlePresetApplied(promptTemplate: string) {
+    if (activePrompt) {
+      // Update the active prompt with the preset template (in memory only)
+      // The PromptEditor component will handle saving to database when user edits
+      const updatedPrompt = { ...activePrompt, prompt_text: promptTemplate }
+      setActivePrompt(updatedPrompt)
+    }
+  }
+
   async function handleImageGenerated() {
     await loadPendingImages()
     await loadGlobalReferences()
@@ -534,6 +543,7 @@ export default function AdminPage() {
             <SettingsPanel
               settings={generationSettings}
               onSettingsChange={setGenerationSettings}
+              onPresetApplied={handlePresetApplied}
             />
 
             {/* Prompt History - Optional */}

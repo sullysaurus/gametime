@@ -26,9 +26,81 @@ export type GenerationSettings = {
   loras: LoRAWeight[]
 }
 
+type Preset = {
+  id: string
+  name: string
+  description: string
+  settings: Partial<GenerationSettings>
+  promptTemplate: string
+}
+
+const CONCERT_PRESETS: Preset[] = [
+  {
+    id: 'epic-stage',
+    name: '🎸 Epic Stage Performance',
+    description: 'Dramatic wide-angle concert shot with stage lighting',
+    settings: {
+      model: 'flux-dev',
+      width: 1920,
+      height: 1080,
+      aspectRatio: '16:9',
+      steps: 40,
+      guidance: 3.8,
+      promptUpsampling: true,
+    },
+    promptTemplate: 'Professional concert photography, epic wide-angle stage shot, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, 8k quality',
+  },
+  {
+    id: 'intimate-spotlight',
+    name: '🎤 Intimate Spotlight',
+    description: 'Close-up portrait with dramatic single spotlight',
+    settings: {
+      model: 'flux-dev',
+      width: 1440,
+      height: 1920,
+      aspectRatio: '3:4',
+      steps: 40,
+      guidance: 4.0,
+      promptUpsampling: true,
+    },
+    promptTemplate: 'Professional concert photography, intimate close-up portrait of performer, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, professional color grading, 8k quality',
+  },
+  {
+    id: 'crowd-energy',
+    name: '🙌 Crowd Energy',
+    description: 'Perspective from stage showing crowd and atmosphere',
+    settings: {
+      model: 'flux-dev',
+      width: 1920,
+      height: 1080,
+      aspectRatio: '16:9',
+      steps: 35,
+      guidance: 3.5,
+      promptUpsampling: true,
+    },
+    promptTemplate: 'Professional concert photography from stage perspective, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant colors, epic atmosphere, 8k quality',
+  },
+  {
+    id: 'silhouette-dramatic',
+    name: '🌟 Dramatic Silhouette',
+    description: 'Powerful backlit silhouette with colorful stage lights',
+    settings: {
+      model: 'flux-dev',
+      width: 1920,
+      height: 1080,
+      aspectRatio: '16:9',
+      steps: 40,
+      guidance: 4.2,
+      promptUpsampling: true,
+    },
+    promptTemplate: 'Professional concert photography, powerful silhouette of performer backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
+  },
+]
+
 type Props = {
   settings: GenerationSettings
   onSettingsChange: (settings: GenerationSettings) => void
+  onPresetApplied?: (promptTemplate: string) => void
 }
 
 const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
@@ -81,7 +153,7 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-export default function SettingsPanel({ settings, onSettingsChange }: Props) {
+export default function SettingsPanel({ settings, onSettingsChange, onPresetApplied }: Props) {
   const isUltra = settings.model === 'flux-pro-1.1-ultra'
   const isKontext = settings.model.includes('kontext')
   const isDev = settings.model === 'flux-dev'
@@ -92,8 +164,41 @@ export default function SettingsPanel({ settings, onSettingsChange }: Props) {
     onSettingsChange({ ...settings, [key]: value })
   }
 
+  const applyPreset = (preset: Preset) => {
+    onSettingsChange({ ...settings, ...preset.settings })
+    if (onPresetApplied) {
+      onPresetApplied(preset.promptTemplate)
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {/* Concert Photography Presets */}
+      <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-lg border border-purple-700/50 p-4">
+        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+          🎵 Concert Photography Presets
+        </h2>
+        <p className="text-xs text-gray-300 mb-4">
+          Optimized settings for hyper-realistic concert photos. Click a preset to auto-configure settings and load prompt template.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {CONCERT_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => applyPreset(preset)}
+              className="text-left p-3 bg-black/40 hover:bg-black/60 border border-purple-600/30 hover:border-purple-500 rounded-lg transition-all group"
+            >
+              <div className="font-medium text-sm mb-1 group-hover:text-purple-300">
+                {preset.name}
+              </div>
+              <div className="text-xs text-gray-400">
+                {preset.description}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
         <h2 className="text-lg font-semibold mb-4">⚙️ Generation Settings</h2>
 
