@@ -11,7 +11,7 @@ import PromptHistory from '@/components/PromptHistory'
 import SectionImageManager from '@/components/SectionImageManager'
 import SectionCarousel from '@/components/SectionCarousel'
 import Collapsible from '@/components/Collapsible'
-import SettingsSidebar from '@/components/SettingsSidebar'
+import SettingsPanel from '@/components/SettingsPanel'
 
 type Section = {
   id: string
@@ -111,11 +111,9 @@ export default function AdminPage() {
 
   // Prompt state
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
-  const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
 
   // Image state
   const [pendingImages, setPendingImages] = useState<GeneratedImage[]>([])
-  const [allImages, setAllImages] = useState<GeneratedImage[]>([])
   const [globalReferences, setGlobalReferences] = useState<GeneratedImage[]>([])
 
   // UI state
@@ -123,15 +121,10 @@ export default function AdminPage() {
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
   const [hideDefaultReference, setHideDefaultReference] = useState(false)
-  const [imageFilter, setImageFilter] = useState<{section?: string; status?: string}>({})
-  const [promptFilter, setPromptFilter] = useState<{tag?: string; template?: boolean}>({})
-  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     loadSections()
     loadGlobalReferences()
-    loadAllImages() // Load unified image library on mount
-    loadAllPrompts() // Load unified prompt library on mount
 
     // Check for section query parameter
     const urlParams = new URLSearchParams(window.location.search)
@@ -234,36 +227,6 @@ export default function AdminPage() {
     }
   }
 
-  async function loadAllImages() {
-    // Load ALL images from ALL sections (unified library)
-    const { data, error} = await supabase
-      .from('generated_images')
-      .select('id, section_id, image_url, model_name, status, created_at, sections(name, section_code)')
-      .order('created_at', { ascending: false })
-      .limit(100) // Limit to recent 100 for performance
-
-    if (error) {
-      console.error('Error loading all images:', error)
-    } else {
-      setAllImages(data || [])
-    }
-  }
-
-  async function loadAllPrompts() {
-    // Load ALL prompts from ALL sections (unified library)
-    const { data, error } = await supabase
-      .from('prompts')
-      .select('id, section_id, prompt_text, negative_prompt, version, is_active, notes, created_at, tags, is_template, sections(name, section_code)')
-      .order('created_at', { ascending: false })
-      .limit(50) // Limit to recent 50 for performance
-
-    if (error) {
-      console.error('Error loading all prompts:', error)
-    } else {
-      setAllPrompts(data || [])
-    }
-  }
-
   async function loadGlobalReferences() {
     const { data, error } = await supabase
       .from('generated_images')
@@ -280,18 +243,15 @@ export default function AdminPage() {
 
   async function handlePromptUpdate(updatedPrompt: Prompt) {
     setActivePrompt(updatedPrompt)
-    await loadAllPrompts() // Refresh unified prompt library
   }
 
   async function handleImageGenerated() {
     await loadPendingImages()
-    await loadAllImages()
     await loadGlobalReferences()
   }
 
   async function handleImageStatusChange() {
     await loadPendingImages()
-    await loadAllImages()
     await loadGlobalReferences()
     await loadSections()
   }
@@ -355,7 +315,6 @@ export default function AdminPage() {
       }
 
       // Reload all prompts to refresh the library
-      await loadAllPrompts()
     } catch (err) {
       console.error('Error deleting prompt:', err)
       alert('Failed to delete prompt')
@@ -444,72 +403,70 @@ export default function AdminPage() {
                 Generate, compare, and manage concert venue images
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowSettings(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors flex items-center gap-2"
-              >
-                <span>⚙️</span>
-                <span>Settings</span>
-              </button>
-              <Link
-                href="/"
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2"
-              >
-                <span>←</span>
-                <span>Back to Home</span>
-              </Link>
-            </div>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+            >
+              <span>←</span>
+              <span>Back to Home</span>
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Section Carousel */}
-        <SectionCarousel
-          sections={sections}
-          selectedSection={selectedSection}
-          onSelectSection={setSelectedSection}
-          onDeleteImage={handleDeleteSectionImage}
-          onUploadImage={handleUploadSectionImage}
-        />
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Section Carousel - Full Width */}
+        <div className="mb-6">
+          <SectionCarousel
+            sections={sections}
+            selectedSection={selectedSection}
+            onSelectSection={setSelectedSection}
+            onDeleteImage={handleDeleteSectionImage}
+            onUploadImage={handleUploadSectionImage}
+          />
+        </div>
 
-        {/* Main Content */}
-        {selectedSection && !activePrompt && (
-          <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
-            <p className="text-gray-400 mb-4">
-              This section doesn't have an active prompt yet.
-            </p>
-            <button
-              onClick={async () => {
-                // Create a default prompt for this section
-                const { data, error } = await (supabase as any)
-                  .from('prompts')
-                  .insert({
-                    section_id: selectedSection.id,
-                    prompt_text: 'A stunning concert venue view',
-                    version: 1,
-                    is_active: true,
-                    notes: 'Initial prompt',
-                    tags: [],
-                    is_template: false
-                  })
-                  .select()
-                  .single()
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Main Content (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* No Active Prompt */}
+            {selectedSection && !activePrompt && (
+              <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
+                <p className="text-gray-400 mb-4">
+                  This section doesn't have an active prompt yet.
+                </p>
+                <button
+                  onClick={async () => {
+                    // Create a default prompt for this section
+                    const { data, error } = await (supabase as any)
+                      .from('prompts')
+                      .insert({
+                        section_id: selectedSection.id,
+                        prompt_text: 'A stunning concert venue view',
+                        version: 1,
+                        is_active: true,
+                        notes: 'Initial prompt',
+                        tags: [],
+                        is_template: false
+                      })
+                      .select()
+                      .single()
 
-                if (!error) {
-                  setActivePrompt(data)
-                }
-              }}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
-            >
-              Create Initial Prompt
-            </button>
-          </div>
-        )}
+                    if (!error) {
+                      setActivePrompt(data)
+                    }
+                  }}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
+                >
+                  Create Initial Prompt
+                </button>
+              </div>
+            )}
 
-        {selectedSection && activePrompt && (
-          <div className="space-y-6">
+            {/* Main Workflow */}
+            {selectedSection && activePrompt && (
+              <>
             {/* Primary Image Manager - Top Priority */}
             <SectionImageManager
               section={selectedSection}
@@ -549,19 +506,6 @@ export default function AdminPage() {
               />
             </Collapsible>
 
-            {/* Prompt History */}
-            <Collapsible
-              title="Prompt History"
-              description="View and restore previous prompt versions"
-              defaultOpen={false}
-            >
-              <PromptHistory
-                section={selectedSection}
-                activePrompt={activePrompt}
-                onPromptRestore={handlePromptUpdate}
-              />
-            </Collapsible>
-
             {/* Pending Images */}
             {pendingImages.length > 0 && (
               <Collapsible
@@ -591,214 +535,30 @@ export default function AdminPage() {
                 </p>
               </div>
             )}
-
-            {/* Unified Prompt Library */}
-            <Collapsible
-              title="📝 Unified Prompt Library"
-              description="All prompts from all sections - Find successful prompts to reuse"
-              badge={`${allPrompts.length}`}
-              defaultOpen={false}
-            >
-              <div className="space-y-4">
-                      {allPrompts.length === 0 ? (
-                        <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
-                          <p className="text-gray-400 mb-2">No prompts found.</p>
-                          <p className="text-sm text-gray-500">Edit a prompt above to get started!</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {allPrompts.map((prompt: any) => (
-                            <div key={prompt.id} className="bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors p-4">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  {/* Section Badge & Template Indicator */}
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
-                                      {prompt.sections?.section_code || 'Unknown'}
-                                    </span>
-                                    {prompt.is_template && (
-                                      <span className="px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded">
-                                        📋 Template
-                                      </span>
-                                    )}
-                                    {prompt.is_active && (
-                                      <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded">
-                                        Active
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Prompt Text */}
-                                  <p className="text-sm text-gray-300 line-clamp-2 mb-2">
-                                    {prompt.prompt_text}
-                                  </p>
-
-                                  {/* Tags */}
-                                  {prompt.tags && prompt.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mb-2">
-                                      {prompt.tags.map((tag: string, idx: number) => (
-                                        <span key={idx} className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded">
-                                          {tag}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-
-                                  {/* Metadata */}
-                                  <div className="flex items-center gap-3 text-xs text-gray-400">
-                                    <span>v{prompt.version}</span>
-                                    <span>•</span>
-                                    <span>{new Date(prompt.created_at).toLocaleDateString()}</span>
-                                    {prompt.notes && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="truncate max-w-xs" title={prompt.notes}>
-                                          {prompt.notes}
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex flex-col gap-2">
-                                  <button
-                                    onClick={async () => {
-                                      if (!selectedSection) return
-
-                                      // Create a new prompt version for the current section using this prompt text
-                                      const { data: newPrompt, error } = await (supabase as any)
-                                        .from('prompts')
-                                        .insert({
-                                          section_id: selectedSection.id,
-                                          prompt_text: prompt.prompt_text,
-                                          negative_prompt: prompt.negative_prompt,
-                                          version: (activePrompt?.version || 0) + 1,
-                                          is_active: true,
-                                          notes: `Copied from ${prompt.sections?.section_code || 'another section'}`,
-                                          tags: prompt.tags,
-                                          is_template: false
-                                        })
-                                        .select()
-                                        .single()
-
-                                      if (error) {
-                                        console.error('Error copying prompt:', error)
-                                        alert('Failed to copy prompt')
-                                        return
-                                      }
-
-                                      // Deactivate old prompt
-                                      if (activePrompt) {
-                                        await (supabase as any)
-                                          .from('prompts')
-                                          .update({ is_active: false })
-                                          .eq('id', activePrompt.id)
-                                      }
-
-                                      // Update UI
-                                      await loadActivePrompt()
-                                      await loadAllPrompts()
-                                      alert('Prompt copied to current section!')
-                                      window.scrollTo({ top: 0, behavior: 'smooth' })
-                                    }}
-                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
-                                  >
-                                    Use for {selectedSection?.section_code}
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      if (confirm('Delete this prompt? This cannot be undone.')) {
-                                        await handleDeletePrompt(prompt.id)
-                                      }
-                                    }}
-                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-xs font-medium transition-colors whitespace-nowrap"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                  </div>
-                )}
-              </div>
-            </Collapsible>
-
-            {/* All Generated Images - Unified Library */}
-            <Collapsible
-              title="🎨 Unified Image Library"
-              description="All images from all sections - Click 'Use as Reference' on any image"
-              badge={`${allImages.length}`}
-              defaultOpen={false}
-            >
-              <div className="space-y-4">
-                      {allImages.length === 0 ? (
-                        <div className="text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
-                          <p className="text-gray-400 mb-2">No images generated yet.</p>
-                          <p className="text-sm text-gray-500">Generate your first image above to get started!</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {allImages.map((image: any) => (
-                            <div key={image.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
-                              <div className="relative aspect-video bg-gray-900">
-                                <Image
-                                  src={image.image_url}
-                                  alt={`Generated image`}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized={image.image_url.startsWith('data:')}
-                                />
-                                {/* Section Badge */}
-                                <div className="absolute top-2 left-2">
-                                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
-                                    {image.sections?.section_code || 'Unknown'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="p-3 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className={`text-xs px-2 py-1 rounded ${
-                                    image.status === 'approved' ? 'bg-green-600' :
-                                    image.status === 'rejected' ? 'bg-red-600' :
-                                    'bg-yellow-600'
-                                  }`}>
-                                    {image.status}
-                                  </span>
-                                  <span className="text-xs text-gray-400">
-                                    {new Date(image.created_at).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-gray-400 truncate" title={image.model_name}>
-                                  {image.model_name}
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    handleUseAsReference(image.image_url)
-                                  }}
-                                  type="button"
-                                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors"
-                                >
-                                  Use as Reference
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                  </div>
-                )}
-              </div>
-            </Collapsible>
+              </>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Settings Sidebar */}
-      {showSettings && (
-        <SettingsSidebar onClose={() => setShowSettings(false)} />
-      )}
+          {/* Right Column - Settings & History (1/3) */}
+          <div className="lg:col-span-1 space-y-6">
+            <SettingsPanel />
+
+            {selectedSection && activePrompt && (
+              <Collapsible
+                title="📝 Prompt History"
+                description="Previous versions for this section"
+                defaultOpen={false}
+              >
+                <PromptHistory
+                  section={selectedSection}
+                  activePrompt={activePrompt}
+                  onPromptRestore={handlePromptUpdate}
+                />
+              </Collapsible>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
