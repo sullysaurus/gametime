@@ -59,6 +59,7 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
             {sections.map((section) => {
+              const hasCustomImage = !!section.current_image_url
               const imageUrl = section.current_image_url || getLocalPhotoUrl(section.section_code)
               const isSelected = selectedSection?.id === section.id
 
@@ -101,11 +102,11 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
                       {/* Action Buttons (visible on hover) */}
                       {(onDeleteImage || onUploadImage) && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
-                          {imageUrl && onDeleteImage && (
+                          {hasCustomImage && onDeleteImage && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                if (confirm('Delete this image from the section?')) {
+                                if (confirm('Delete this custom image? The section will revert to the default view.')) {
                                   onDeleteImage(section.id)
                                 }
                               }}

@@ -11,6 +11,7 @@ import PromptHistory from '@/components/PromptHistory'
 import SectionImageManager from '@/components/SectionImageManager'
 import SectionCarousel from '@/components/SectionCarousel'
 import Collapsible from '@/components/Collapsible'
+import SettingsSidebar from '@/components/SettingsSidebar'
 
 type Section = {
   id: string
@@ -124,6 +125,7 @@ export default function AdminPage() {
   const [hideDefaultReference, setHideDefaultReference] = useState(false)
   const [imageFilter, setImageFilter] = useState<{section?: string; status?: string}>({})
   const [promptFilter, setPromptFilter] = useState<{tag?: string; template?: boolean}>({})
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     loadSections()
@@ -362,6 +364,8 @@ export default function AdminPage() {
 
   async function handleDeleteSectionImage(sectionId: string) {
     try {
+      console.log('Deleting image for section:', sectionId)
+
       // Clear the current_image_url from the section
       const { error } = await (supabase as any)
         .from('sections')
@@ -370,15 +374,19 @@ export default function AdminPage() {
 
       if (error) {
         console.error('Error deleting section image:', error)
-        alert('Failed to delete image')
+        alert('Failed to delete image: ' + error.message)
         return
       }
 
+      console.log('Image deleted successfully')
+
       // Reload sections to refresh the carousel
       await loadSections()
+
+      alert('Image deleted successfully!')
     } catch (err) {
       console.error('Error deleting section image:', err)
-      alert('Failed to delete image')
+      alert('Failed to delete image: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
@@ -436,13 +444,22 @@ export default function AdminPage() {
                 Generate, compare, and manage concert venue images
               </p>
             </div>
-            <Link
-              href="/"
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2"
-            >
-              <span>←</span>
-              <span>Back to Home</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+              >
+                <span>⚙️</span>
+                <span>Settings</span>
+              </button>
+              <Link
+                href="/"
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+              >
+                <span>←</span>
+                <span>Back to Home</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -777,6 +794,11 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Settings Sidebar */}
+      {showSettings && (
+        <SettingsSidebar onClose={() => setShowSettings(false)} />
+      )}
     </div>
   )
 }
