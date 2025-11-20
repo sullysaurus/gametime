@@ -136,6 +136,15 @@ export default function ImageGenerator({
       if (settings.model === 'flux-dev') {
         requestBody.steps = settings.steps
         requestBody.guidance = settings.guidance
+
+        // Add LoRA models if configured
+        if (settings.loras && settings.loras.length > 0) {
+          // Only include LoRAs with non-empty paths
+          const validLoras = settings.loras.filter(lora => lora.path.trim() !== '')
+          if (validLoras.length > 0) {
+            requestBody.loras = validLoras
+          }
+        }
       }
 
       const response = await fetch('/api/generate-image', {

@@ -5,6 +5,11 @@ import Collapsible from './Collapsible'
 
 type FluxModel = 'flux-pro-1.1-ultra' | 'flux-pro-1.1' | 'flux-pro' | 'flux-dev' | 'flux-kontext-max' | 'flux-kontext-pro' | 'flux-kontext-dev'
 
+export type LoRAWeight = {
+  path: string
+  scale: number
+}
+
 export type GenerationSettings = {
   model: FluxModel
   width: number
@@ -18,6 +23,7 @@ export type GenerationSettings = {
   imagePromptStrength: number
   steps: number
   guidance: number
+  loras: LoRAWeight[]
 }
 
 type Props = {
@@ -307,6 +313,93 @@ export default function SettingsPanel({ settings, onSettingsChange }: Props) {
                   <p className="text-xs text-gray-500 mt-1">
                     Higher = follows prompt more closely
                   </p>
+                </div>
+
+                {/* LoRA Configuration */}
+                <div className="border-t border-gray-700 pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs text-gray-300 font-medium">
+                      LoRA Models (Hyper-Realistic)
+                    </label>
+                    <button
+                      onClick={() => {
+                        const newLoras = [...settings.loras, { path: '', scale: 1.0 }]
+                        updateSetting('loras', newLoras)
+                      }}
+                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
+                    >
+                      + Add LoRA
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Add LoRA models for style fine-tuning (e.g., hyper-realism, photography)
+                  </p>
+
+                  {settings.loras.length === 0 ? (
+                    <div className="text-xs text-gray-500 italic py-2">
+                      No LoRAs added. Click &quot;+ Add LoRA&quot; to start.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {settings.loras.map((lora, index) => (
+                        <div key={index} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <input
+                              type="text"
+                              value={lora.path}
+                              onChange={(e) => {
+                                const newLoras = [...settings.loras]
+                                newLoras[index].path = e.target.value
+                                updateSetting('loras', newLoras)
+                              }}
+                              placeholder="LoRA path (e.g., model-id or URL)"
+                              className="flex-1 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs placeholder:text-gray-600"
+                            />
+                            <button
+                              onClick={() => {
+                                const newLoras = settings.loras.filter((_, i) => i !== index)
+                                updateSetting('loras', newLoras)
+                              }}
+                              className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400 block mb-1">
+                              Weight: {lora.scale.toFixed(2)}
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="2"
+                              step="0.1"
+                              value={lora.scale}
+                              onChange={(e) => {
+                                const newLoras = [...settings.loras]
+                                newLoras[index].scale = parseFloat(e.target.value)
+                                updateSetting('loras', newLoras)
+                              }}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                              <span>Subtle (0)</span>
+                              <span>Strong (2)</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-3 text-xs text-gray-500 bg-gray-800 border border-gray-700 rounded p-2">
+                    <div className="font-medium text-gray-400 mb-1">Recommended for Venues:</div>
+                    <div className="space-y-1 text-gray-500">
+                      <div>• Hyper-realism LoRAs (weight: 0.8-1.2)</div>
+                      <div>• Photography enhancement LoRAs</div>
+                      <div>• Architectural detail LoRAs</div>
+                    </div>
+                  </div>
                 </div>
               </>
             )}

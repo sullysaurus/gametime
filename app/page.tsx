@@ -198,13 +198,10 @@ export default function HomePage() {
             </div>
             <Link
               href="/admin"
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-base font-semibold transition-colors"
             >
-              Admin
+              ADMIN
             </Link>
-            <button className="text-sm text-gray-300 hover:text-white transition-colors">
-              Log In
-            </button>
           </div>
         </div>
       </div>
@@ -225,7 +222,7 @@ export default function HomePage() {
                 <h1 className="text-lg font-bold">Jason Isbell And The 400 Unit</h1>
                 <p className="text-sm text-gray-400">Red Rocks Amphitheatre</p>
               </div>
-              <Link href="/admin" className="text-white text-xs">Admin</Link>
+              <Link href="/admin" className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded font-semibold text-sm">ADMIN</Link>
             </div>
 
             <div className="flex gap-2 mb-3">

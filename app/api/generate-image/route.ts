@@ -24,6 +24,11 @@ type FluxModel =
   | 'flux-kontext-pro'
   | 'flux-kontext-dev'
 
+type LoRAWeight = {
+  path: string  // LoRA model path/identifier
+  scale: number // Weight scale (typically 0.5-1.5)
+}
+
 type GenerateImagePayload = {
   sectionId: string
   promptId: string
@@ -44,6 +49,7 @@ type GenerateImagePayload = {
   input_image?: string | null  // Base64 image for Kontext img2img
   steps?: number  // For dev model
   guidance?: number  // For dev model
+  loras?: LoRAWeight[]  // LoRA models (for dev model)
 }
 
 // Convert width/height to aspect ratio for Ultra model
@@ -102,10 +108,13 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
     requestBody.height = payload.height || 1024
   }
 
-  // Dev model supports steps and guidance
+  // Dev model supports steps, guidance, and LoRAs
   if (model === 'flux-dev') {
     if (payload.steps) requestBody.steps = payload.steps
     if (payload.guidance) requestBody.guidance = payload.guidance
+    if (payload.loras && payload.loras.length > 0) {
+      requestBody.loras = payload.loras
+    }
   }
 
   console.log(`Generating image with BFL ${model}...`, requestBody)
