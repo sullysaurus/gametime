@@ -544,6 +544,9 @@ export default function AdminPage() {
               settings={generationSettings}
               onSettingsChange={setGenerationSettings}
               onPresetApplied={handlePresetApplied}
+              sectionName={selectedSection?.name}
+              sectionCode={selectedSection?.section_code}
+              rowInfo={selectedSection?.row_info || undefined}
             />
 
             {/* Prompt History - Optional */}

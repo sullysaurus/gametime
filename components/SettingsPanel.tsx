@@ -40,60 +40,48 @@ const CONCERT_PRESETS: Preset[] = [
     name: '🎸 Epic Stage Performance',
     description: 'Dramatic wide-angle concert shot with stage lighting',
     settings: {
-      model: 'flux-dev',
-      width: 1920,
-      height: 1080,
+      model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      steps: 40,
-      guidance: 3.8,
+      imagePromptStrength: 0.75,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography, epic wide-angle stage shot, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, 8k quality',
+    promptTemplate: 'Professional concert photography of {SECTION} seating view, epic wide-angle stage shot, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
   },
   {
     id: 'intimate-spotlight',
     name: '🎤 Intimate Spotlight',
     description: 'Close-up portrait with dramatic single spotlight',
     settings: {
-      model: 'flux-dev',
-      width: 1440,
-      height: 1920,
+      model: 'flux-kontext-max',
       aspectRatio: '3:4',
-      steps: 40,
-      guidance: 4.0,
+      imagePromptStrength: 0.75,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography, intimate close-up portrait of performer, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} perspective, intimate close-up portrait of performer, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
   },
   {
     id: 'crowd-energy',
     name: '🙌 Crowd Energy',
     description: 'Perspective from stage showing crowd and atmosphere',
     settings: {
-      model: 'flux-dev',
-      width: 1920,
-      height: 1080,
+      model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      steps: 35,
-      guidance: 3.5,
+      imagePromptStrength: 0.7,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from stage perspective, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant colors, epic atmosphere, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} vantage point, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view showing the exact seating layout and perspective, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
   },
   {
     id: 'silhouette-dramatic',
     name: '🌟 Dramatic Silhouette',
     description: 'Powerful backlit silhouette with colorful stage lights',
     settings: {
-      model: 'flux-dev',
-      width: 1920,
-      height: 1080,
+      model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      steps: 40,
-      guidance: 4.2,
+      imagePromptStrength: 0.8,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography, powerful silhouette of performer backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} view preserving the exact seating composition, powerful silhouette of performer backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
   },
 ]
 
@@ -101,6 +89,9 @@ type Props = {
   settings: GenerationSettings
   onSettingsChange: (settings: GenerationSettings) => void
   onPresetApplied?: (promptTemplate: string) => void
+  sectionName?: string
+  sectionCode?: string
+  rowInfo?: string
 }
 
 const FLUX_MODELS: { id: FluxModel; name: string; description: string }[] = [
@@ -153,7 +144,14 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-export default function SettingsPanel({ settings, onSettingsChange, onPresetApplied }: Props) {
+export default function SettingsPanel({
+  settings,
+  onSettingsChange,
+  onPresetApplied,
+  sectionName,
+  sectionCode,
+  rowInfo
+}: Props) {
   const isUltra = settings.model === 'flux-pro-1.1-ultra'
   const isKontext = settings.model.includes('kontext')
   const isDev = settings.model === 'flux-dev'
@@ -167,7 +165,19 @@ export default function SettingsPanel({ settings, onSettingsChange, onPresetAppl
   const applyPreset = (preset: Preset) => {
     onSettingsChange({ ...settings, ...preset.settings })
     if (onPresetApplied) {
-      onPresetApplied(preset.promptTemplate)
+      // Build section description
+      let sectionDescription = ''
+      if (sectionName && sectionCode) {
+        sectionDescription = `${sectionName} (${sectionCode}${rowInfo ? `, ${rowInfo}` : ''})`
+      } else if (sectionCode) {
+        sectionDescription = sectionCode
+      } else {
+        sectionDescription = 'this seating section'
+      }
+
+      // Replace {SECTION} placeholder with actual section info
+      const finalPrompt = preset.promptTemplate.replace(/{SECTION}/g, sectionDescription)
+      onPresetApplied(finalPrompt)
     }
   }
 
@@ -179,7 +189,8 @@ export default function SettingsPanel({ settings, onSettingsChange, onPresetAppl
           🎵 Concert Photography Presets
         </h2>
         <p className="text-xs text-gray-300 mb-4">
-          Optimized settings for hyper-realistic concert photos. Click a preset to auto-configure settings and load prompt template.
+          Transform your reference photo with dramatic concert lighting! Upload a section image, then click a preset.
+          Uses Kontext Max for img2img with section details automatically included.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {CONCERT_PRESETS.map((preset) => (
