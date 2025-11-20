@@ -38,18 +38,9 @@ export default function HomePage() {
     loadSections()
   }, [])
 
-  // Map section codes to local photos
+  // Placeholder images removed - sections display images from admin uploads
   function getLocalPhotoUrl(sectionCode: string): string | null {
-    const mapping: Record<string, string> = {
-      'BL': '/sections/back-left.jpeg',
-      'BLC': '/sections/back-left-center.jpeg',
-      'BRC': '/sections/back-right-center.jpeg',
-      'BR': '/sections/back-right.jpeg',
-      'Pit GA': '/sections/general-admission.jpeg',
-      'Seating GA': '/sections/general-admission.jpeg',
-      'SRO': '/sections/general-admission.jpeg',
-    }
-    return mapping[sectionCode] || null
+    return null
   }
 
   async function loadSections() {
