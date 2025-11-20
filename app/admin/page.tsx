@@ -203,12 +203,15 @@ export default function AdminPage() {
       .eq('is_active', true)
       .order('version', { ascending: false })
       .limit(1)
-      .single()
 
     if (error) {
       console.error('Error loading prompt:', error)
+      setActivePrompt(null)
+    } else if (data && data.length > 0) {
+      setActivePrompt(data[0])
     } else {
-      setActivePrompt(data)
+      // No active prompt found for this section
+      setActivePrompt(null)
     }
   }
 
@@ -455,6 +458,39 @@ export default function AdminPage() {
         />
 
         {/* Main Content */}
+        {selectedSection && !activePrompt && (
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
+            <p className="text-gray-400 mb-4">
+              This section doesn't have an active prompt yet.
+            </p>
+            <button
+              onClick={async () => {
+                // Create a default prompt for this section
+                const { data, error } = await (supabase as any)
+                  .from('prompts')
+                  .insert({
+                    section_id: selectedSection.id,
+                    prompt_text: 'A stunning concert venue view',
+                    version: 1,
+                    is_active: true,
+                    notes: 'Initial prompt',
+                    tags: [],
+                    is_template: false
+                  })
+                  .select()
+                  .single()
+
+                if (!error) {
+                  setActivePrompt(data)
+                }
+              }}
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
+            >
+              Create Initial Prompt
+            </button>
+          </div>
+        )}
+
         {selectedSection && activePrompt && (
           <div className="space-y-6">
             {/* Primary Image Manager - Top Priority */}

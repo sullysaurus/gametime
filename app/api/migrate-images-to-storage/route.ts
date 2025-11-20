@@ -142,8 +142,16 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check migration status
 export async function GET() {
   try {
+    // Use admin client for server-side queries
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        error: 'SUPABASE_SERVICE_ROLE_KEY not configured',
+        serviceRoleConfigured: false
+      })
+    }
+
     // Count base64 vs storage images
-    const { data: allImages, error } = await (supabase as any)
+    const { data: allImages, error } = await supabaseAdmin
       .from('generated_images')
       .select('image_url')
 
