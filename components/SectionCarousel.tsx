@@ -21,6 +21,7 @@ type Props = {
   onSelectSection: (section: Section) => void
   onDeleteImage?: (sectionId: string) => void
   onUploadImage?: (sectionId: string, file: File) => void
+  onUseAsReference?: (imageUrl: string) => void
 }
 
 // Map section codes to local photos (fallback images)
@@ -37,7 +38,7 @@ function getLocalPhotoUrl(sectionCode: string): string | null {
   return mapping[sectionCode] || null
 }
 
-export default function SectionCarousel({ sections, selectedSection, onSelectSection, onDeleteImage, onUploadImage }: Props) {
+export default function SectionCarousel({ sections, selectedSection, onSelectSection, onDeleteImage, onUploadImage, onUseAsReference }: Props) {
   const handleFileUpload = (sectionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && onUploadImage) {
@@ -100,8 +101,19 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
                       )}
 
                       {/* Action Buttons (visible on hover) */}
-                      {(onDeleteImage || onUploadImage) && (
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+                      {(onDeleteImage || onUploadImage || onUseAsReference) && (
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4 flex-wrap">
+                          {imageUrl && onUseAsReference && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onUseAsReference(imageUrl)
+                              }}
+                              className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition-colors"
+                            >
+                              📸 Use as Reference
+                            </button>
+                          )}
                           {hasCustomImage && onDeleteImage && (
                             <button
                               onClick={(e) => {

@@ -135,8 +135,6 @@ export default function AdminPage() {
     steps: 28,
     guidance: 3.5,
     loras: [],
-    focusArea: 'center-stage',
-    viewingPerspective: 'keep-original',
     referenceImage: null,
     img2imgStrength: 0.85,
   })
@@ -286,8 +284,14 @@ export default function AdminPage() {
   }
 
   function handleUseAsReference(imageUrl: string) {
+    // Set as reference image for img2img generation
+    setGenerationSettings(prev => ({
+      ...prev,
+      referenceImage: imageUrl
+    }))
+    // Also set the old state for backwards compatibility
     setSelectedReferenceImageUrl(imageUrl)
-    // Scroll to top to see the ImageGenerator
+    // Scroll to settings panel to see the reference image
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -435,6 +439,7 @@ export default function AdminPage() {
             onSelectSection={setSelectedSection}
             onDeleteImage={handleDeleteSectionImage}
             onUploadImage={handleUploadSectionImage}
+            onUseAsReference={handleUseAsReference}
           />
         </div>
 

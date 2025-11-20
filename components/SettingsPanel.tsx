@@ -23,8 +23,6 @@ export type GenerationSettings = {
   steps: number
   guidance: number
   loras: LoRAWeight[]
-  focusArea: string
-  viewingPerspective: string
   // Image-to-image settings
   referenceImage: string | null  // Base64 data URI or URL
   img2imgStrength: number  // 0.0-1.0, default 0.85
@@ -38,56 +36,7 @@ type Preset = {
   promptTemplate: string
 }
 
-const CONCERT_PRESETS: Preset[] = [
-  {
-    id: 'epic-stage',
-    name: '🎸 Epic Stage Performance',
-    description: 'Dramatic wide-angle concert shot with stage lighting',
-    settings: {
-      model: 'flux-kontext-max',
-      aspectRatio: '16:9',
-      imagePromptStrength: 0.45,
-      promptUpsampling: true,
-    },
-    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, epic wide-angle stage shot focused on {FOCUS}, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
-  },
-  {
-    id: 'intimate-spotlight',
-    name: '🎤 Intimate Spotlight',
-    description: 'Close-up portrait with dramatic single spotlight',
-    settings: {
-      model: 'flux-kontext-max',
-      aspectRatio: '3:4',
-      imagePromptStrength: 0.45,
-      promptUpsampling: true,
-    },
-    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, intimate close-up portrait of performer on {FOCUS}, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
-  },
-  {
-    id: 'crowd-energy',
-    name: '🙌 Crowd Energy',
-    description: 'Perspective from stage showing crowd and atmosphere',
-    settings: {
-      model: 'flux-kontext-max',
-      aspectRatio: '16:9',
-      imagePromptStrength: 0.4,
-      promptUpsampling: true,
-    },
-    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, massive crowd with hands raised looking at {FOCUS}, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
-  },
-  {
-    id: 'silhouette-dramatic',
-    name: '🌟 Dramatic Silhouette',
-    description: 'Powerful backlit silhouette with colorful stage lights',
-    settings: {
-      model: 'flux-kontext-max',
-      aspectRatio: '16:9',
-      imagePromptStrength: 0.5,
-      promptUpsampling: true,
-    },
-    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, powerful silhouette of performer on {FOCUS} backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
-  },
-]
+// Camera perspective presets removed - use img2img with reference photos instead
 
 type Props = {
   settings: GenerationSettings
@@ -148,23 +97,7 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
-const FOCUS_AREAS = [
-  { value: 'center-stage', label: 'Center Stage', description: 'Main performer front and center' },
-  { value: 'front-left', label: 'Front Left', description: 'Stage left side focus' },
-  { value: 'front-right', label: 'Front Right', description: 'Stage right side focus' },
-  { value: 'full-stage', label: 'Full Stage', description: 'Wide view of entire stage' },
-  { value: 'crowd-forward', label: 'Crowd Forward', description: 'Front rows and crowd energy' },
-  { value: 'stage-from-crowd', label: 'Stage from Crowd', description: 'Looking toward stage from audience' },
-]
-
-const VIEWING_PERSPECTIVES = [
-  { value: 'keep-original', label: 'Keep Original', description: 'Maintain current camera angle' },
-  { value: 'far-left', label: 'Far Left Side', description: 'Camera positioned far stage left' },
-  { value: 'left', label: 'Left Side', description: 'Camera angled from left' },
-  { value: 'center', label: 'Center View', description: 'Straight-on center perspective' },
-  { value: 'right', label: 'Right Side', description: 'Camera angled from right' },
-  { value: 'far-right', label: 'Far Right Side', description: 'Camera positioned far stage right' },
-]
+// Camera perspective presets removed - img2img with reference photos handles this better
 
 export default function SettingsPanel({
   settings,
@@ -186,131 +119,10 @@ export default function SettingsPanel({
     onSettingsChange({ ...settings, [key]: value })
   }
 
-  const applyPreset = (preset: Preset) => {
-    setSelectedPresetId(preset.id)
-    onSettingsChange({ ...settings, ...preset.settings })
-    if (onPresetApplied) {
-      // Build section description
-      let sectionDescription = ''
-      if (sectionName && sectionCode) {
-        sectionDescription = `${sectionName} (${sectionCode}${rowInfo ? `, ${rowInfo}` : ''})`
-      } else if (sectionCode) {
-        sectionDescription = sectionCode
-      } else {
-        sectionDescription = 'this seating section'
-      }
-
-      // Get focus area description
-      const focusAreaObj = FOCUS_AREAS.find(f => f.value === settings.focusArea)
-      const focusDescription = focusAreaObj?.label.toLowerCase() || 'center stage'
-
-      // Get perspective description
-      const perspectiveObj = VIEWING_PERSPECTIVES.find(p => p.value === settings.viewingPerspective)
-      let perspectiveDescription = ''
-      if (settings.viewingPerspective === 'keep-original') {
-        perspectiveDescription = `from ${sectionDescription} seating view`
-      } else {
-        perspectiveDescription = `camera angle from ${perspectiveObj?.label.toLowerCase() || 'center view'} of venue`
-      }
-
-      // Replace placeholders with actual info
-      let finalPrompt = preset.promptTemplate.replace(/{SECTION}/g, sectionDescription)
-      finalPrompt = finalPrompt.replace(/{FOCUS}/g, focusDescription)
-      finalPrompt = finalPrompt.replace(/{PERSPECTIVE}/g, perspectiveDescription)
-      onPresetApplied(finalPrompt)
-    }
-  }
+  // Camera perspective preset system removed - img2img with reference photos is more effective
 
   return (
     <div className="space-y-4">
-      {/* Concert Photography Presets */}
-      <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-lg border border-purple-700/50 p-4">
-        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          🎵 Concert Photography Presets
-        </h2>
-        <p className="text-xs text-gray-300 mb-4">
-          Transform your reference photo with dramatic concert lighting! Upload a section image, then click a preset.
-          Uses Kontext Max for img2img with section details automatically included.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {CONCERT_PRESETS.map((preset) => {
-            const isSelected = selectedPresetId === preset.id
-            return (
-              <button
-                key={preset.id}
-                onClick={() => applyPreset(preset)}
-                className={`text-left p-3 rounded-lg transition-all group relative ${
-                  isSelected
-                    ? 'bg-purple-600/40 border-2 border-purple-400 shadow-lg shadow-purple-500/50'
-                    : 'bg-black/40 hover:bg-black/60 border border-purple-600/30 hover:border-purple-500'
-                }`}
-              >
-                {isSelected && (
-                  <div className="absolute top-2 right-2 bg-purple-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    ✓
-                  </div>
-                )}
-                <div className={`font-medium text-sm mb-1 ${
-                  isSelected ? 'text-purple-200' : 'group-hover:text-purple-300'
-                }`}>
-                  {preset.name}
-                </div>
-                <div className={`text-xs ${
-                  isSelected ? 'text-purple-300' : 'text-gray-400'
-                }`}>
-                  {preset.description}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Focus Area Selector */}
-        <div className="mt-4 pt-4 border-t border-purple-700/30">
-          <label className="text-xs font-medium text-purple-300 mb-2 block">
-            🎯 Stage Focus Area
-          </label>
-          <select
-            value={settings.focusArea}
-            onChange={(e) => updateSetting('focusArea', e.target.value)}
-            className="w-full px-3 py-2 bg-black/40 border border-purple-600/40 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {FOCUS_AREAS.map((area) => (
-              <option key={area.value} value={area.value}>
-                {area.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-400 mt-1">
-            {FOCUS_AREAS.find(a => a.value === settings.focusArea)?.description}
-          </p>
-        </div>
-
-        {/* Viewing Perspective Selector */}
-        <div className="mt-4">
-          <label className="text-xs font-medium text-purple-300 mb-2 block">
-            📷 Camera Perspective
-          </label>
-          <select
-            value={settings.viewingPerspective}
-            onChange={(e) => updateSetting('viewingPerspective', e.target.value)}
-            className="w-full px-3 py-2 bg-black/40 border border-purple-600/40 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            {VIEWING_PERSPECTIVES.map((perspective) => (
-              <option key={perspective.value} value={perspective.value}>
-                {perspective.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-400 mt-1">
-            {VIEWING_PERSPECTIVES.find(p => p.value === settings.viewingPerspective)?.description}
-          </p>
-          <p className="text-xs text-yellow-400 mt-2">
-            💡 Change this to shift the camera angle (e.g., right side photo → left side view)
-          </p>
-        </div>
-      </div>
-
       <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
         <h2 className="text-lg font-semibold mb-4">⚙️ Generation Settings</h2>
 
