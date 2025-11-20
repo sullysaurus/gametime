@@ -357,6 +357,62 @@ export default function AdminPage() {
     }
   }
 
+  async function handleDeleteSectionImage(sectionId: string) {
+    try {
+      // Clear the current_image_url from the section
+      const { error } = await (supabase as any)
+        .from('sections')
+        .update({ current_image_url: null })
+        .eq('id', sectionId)
+
+      if (error) {
+        console.error('Error deleting section image:', error)
+        alert('Failed to delete image')
+        return
+      }
+
+      // Reload sections to refresh the carousel
+      await loadSections()
+    } catch (err) {
+      console.error('Error deleting section image:', err)
+      alert('Failed to delete image')
+    }
+  }
+
+  async function handleUploadSectionImage(sectionId: string, file: File) {
+    try {
+      // Convert file to base64 for now (will use storage when service key is configured)
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64 = reader.result as string
+
+        // Update the section with the new image
+        const { error } = await (supabase as any)
+          .from('sections')
+          .update({ current_image_url: base64 })
+          .eq('id', sectionId)
+
+        if (error) {
+          console.error('Error uploading section image:', error)
+          alert('Failed to upload image')
+          return
+        }
+
+        // Reload sections to refresh the carousel
+        await loadSections()
+      }
+
+      reader.onerror = () => {
+        alert('Failed to read file')
+      }
+
+      reader.readAsDataURL(file)
+    } catch (err) {
+      console.error('Error uploading section image:', err)
+      alert('Failed to upload image')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -394,6 +450,8 @@ export default function AdminPage() {
           sections={sections}
           selectedSection={selectedSection}
           onSelectSection={setSelectedSection}
+          onDeleteImage={handleDeleteSectionImage}
+          onUploadImage={handleUploadSectionImage}
         />
 
         {/* Main Content */}

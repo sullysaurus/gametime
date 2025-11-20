@@ -19,6 +19,8 @@ type Props = {
   sections: Section[]
   selectedSection: Section | null
   onSelectSection: (section: Section) => void
+  onDeleteImage?: (sectionId: string) => void
+  onUploadImage?: (sectionId: string, file: File) => void
 }
 
 // Map section codes to local photos (fallback images)
@@ -35,7 +37,14 @@ function getLocalPhotoUrl(sectionCode: string): string | null {
   return mapping[sectionCode] || null
 }
 
-export default function SectionCarousel({ sections, selectedSection, onSelectSection }: Props) {
+export default function SectionCarousel({ sections, selectedSection, onSelectSection, onDeleteImage, onUploadImage }: Props) {
+  const handleFileUpload = (sectionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && onUploadImage) {
+      onUploadImage(sectionId, file)
+    }
+  }
+
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
       <div className="mb-4">
@@ -54,38 +63,75 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
               const isSelected = selectedSection?.id === section.id
 
               return (
-                <button
+                <div
                   key={section.id}
-                  onClick={() => onSelectSection(section)}
-                  className={`flex-shrink-0 w-64 rounded-lg overflow-hidden transition-all ${
+                  className={`flex-shrink-0 w-64 rounded-lg overflow-hidden transition-all group ${
                     isSelected
                       ? 'ring-4 ring-green-500 shadow-lg shadow-green-500/50'
                       : 'ring-2 ring-gray-700 hover:ring-gray-600'
                   }`}
                 >
-                  {/* Image */}
-                  <div className="relative aspect-video bg-gray-800">
-                    {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={section.name}
-                        fill
-                        className="object-cover"
-                        unoptimized={imageUrl.startsWith('data:')}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                        No Image
-                      </div>
-                    )}
+                  <button
+                    onClick={() => onSelectSection(section)}
+                    className="w-full"
+                  >
+                    {/* Image */}
+                    <div className="relative aspect-video bg-gray-800">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={section.name}
+                          fill
+                          className="object-cover"
+                          unoptimized={imageUrl.startsWith('data:')}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                          No Image
+                        </div>
+                      )}
 
-                    {/* Selected Indicator */}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                        Selected
-                      </div>
-                    )}
-                  </div>
+                      {/* Selected Indicator */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          Selected
+                        </div>
+                      )}
+
+                      {/* Action Buttons (visible on hover) */}
+                      {(onDeleteImage || onUploadImage) && (
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+                          {imageUrl && onDeleteImage && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (confirm('Delete this image from the section?')) {
+                                  onDeleteImage(section.id)
+                                }
+                              }}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors"
+                            >
+                              Delete Image
+                            </button>
+                          )}
+                          {onUploadImage && (
+                            <label className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium transition-colors cursor-pointer">
+                              Upload New
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  handleFileUpload(section.id, e)
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </button>
 
                   {/* Section Info */}
                   <div className={`p-3 text-left ${
@@ -113,7 +159,7 @@ export default function SectionCarousel({ sections, selectedSection, onSelectSec
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               )
             })}
           </div>
