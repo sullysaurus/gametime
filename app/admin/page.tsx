@@ -136,6 +136,7 @@ export default function AdminPage() {
     guidance: 3.5,
     loras: [],
     focusArea: 'center-stage',
+    viewingPerspective: 'keep-original',
   })
 
   useEffect(() => {

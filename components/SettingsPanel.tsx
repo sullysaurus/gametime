@@ -25,6 +25,7 @@ export type GenerationSettings = {
   guidance: number
   loras: LoRAWeight[]
   focusArea: string
+  viewingPerspective: string
 }
 
 type Preset = {
@@ -43,10 +44,10 @@ const CONCERT_PRESETS: Preset[] = [
     settings: {
       model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      imagePromptStrength: 0.75,
+      imagePromptStrength: 0.45,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography of {SECTION} seating view, epic wide-angle stage shot focused on {FOCUS}, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
+    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, epic wide-angle stage shot focused on {FOCUS}, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
   },
   {
     id: 'intimate-spotlight',
@@ -55,10 +56,10 @@ const CONCERT_PRESETS: Preset[] = [
     settings: {
       model: 'flux-kontext-max',
       aspectRatio: '3:4',
-      imagePromptStrength: 0.75,
+      imagePromptStrength: 0.45,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} perspective, intimate close-up portrait of performer on {FOCUS}, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, intimate close-up portrait of performer on {FOCUS}, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
   },
   {
     id: 'crowd-energy',
@@ -67,10 +68,10 @@ const CONCERT_PRESETS: Preset[] = [
     settings: {
       model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      imagePromptStrength: 0.7,
+      imagePromptStrength: 0.4,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} vantage point looking at {FOCUS}, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view showing the exact seating layout and perspective, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
+    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, massive crowd with hands raised looking at {FOCUS}, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
   },
   {
     id: 'silhouette-dramatic',
@@ -79,10 +80,10 @@ const CONCERT_PRESETS: Preset[] = [
     settings: {
       model: 'flux-kontext-max',
       aspectRatio: '16:9',
-      imagePromptStrength: 0.8,
+      imagePromptStrength: 0.5,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} view preserving the exact seating composition, powerful silhouette of performer on {FOCUS} backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography, {PERSPECTIVE}, powerful silhouette of performer on {FOCUS} backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
   },
 ]
 
@@ -154,6 +155,15 @@ const FOCUS_AREAS = [
   { value: 'stage-from-crowd', label: 'Stage from Crowd', description: 'Looking toward stage from audience' },
 ]
 
+const VIEWING_PERSPECTIVES = [
+  { value: 'keep-original', label: 'Keep Original', description: 'Maintain current camera angle' },
+  { value: 'far-left', label: 'Far Left Side', description: 'Camera positioned far stage left' },
+  { value: 'left', label: 'Left Side', description: 'Camera angled from left' },
+  { value: 'center', label: 'Center View', description: 'Straight-on center perspective' },
+  { value: 'right', label: 'Right Side', description: 'Camera angled from right' },
+  { value: 'far-right', label: 'Far Right Side', description: 'Camera positioned far stage right' },
+]
+
 export default function SettingsPanel({
   settings,
   onSettingsChange,
@@ -189,9 +199,19 @@ export default function SettingsPanel({
       const focusAreaObj = FOCUS_AREAS.find(f => f.value === settings.focusArea)
       const focusDescription = focusAreaObj?.label.toLowerCase() || 'center stage'
 
+      // Get perspective description
+      const perspectiveObj = VIEWING_PERSPECTIVES.find(p => p.value === settings.viewingPerspective)
+      let perspectiveDescription = ''
+      if (settings.viewingPerspective === 'keep-original') {
+        perspectiveDescription = `from ${sectionDescription} seating view`
+      } else {
+        perspectiveDescription = `camera angle from ${perspectiveObj?.label.toLowerCase() || 'center view'} of venue`
+      }
+
       // Replace placeholders with actual info
       let finalPrompt = preset.promptTemplate.replace(/{SECTION}/g, sectionDescription)
       finalPrompt = finalPrompt.replace(/{FOCUS}/g, focusDescription)
+      finalPrompt = finalPrompt.replace(/{PERSPECTIVE}/g, perspectiveDescription)
       onPresetApplied(finalPrompt)
     }
   }
@@ -242,6 +262,30 @@ export default function SettingsPanel({
           </select>
           <p className="text-xs text-gray-400 mt-1">
             {FOCUS_AREAS.find(a => a.value === settings.focusArea)?.description}
+          </p>
+        </div>
+
+        {/* Viewing Perspective Selector */}
+        <div className="mt-4">
+          <label className="text-xs font-medium text-purple-300 mb-2 block">
+            📷 Camera Perspective
+          </label>
+          <select
+            value={settings.viewingPerspective}
+            onChange={(e) => updateSetting('viewingPerspective', e.target.value)}
+            className="w-full px-3 py-2 bg-black/40 border border-purple-600/40 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            {VIEWING_PERSPECTIVES.map((perspective) => (
+              <option key={perspective.value} value={perspective.value}>
+                {perspective.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            {VIEWING_PERSPECTIVES.find(p => p.value === settings.viewingPerspective)?.description}
+          </p>
+          <p className="text-xs text-yellow-400 mt-2">
+            💡 Change this to shift the camera angle (e.g., right side photo → left side view)
           </p>
         </div>
       </div>
