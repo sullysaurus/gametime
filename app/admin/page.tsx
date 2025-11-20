@@ -11,7 +11,7 @@ import PromptHistory from '@/components/PromptHistory'
 import SectionImageManager from '@/components/SectionImageManager'
 import SectionCarousel from '@/components/SectionCarousel'
 import Collapsible from '@/components/Collapsible'
-import SettingsPanel from '@/components/SettingsPanel'
+import SettingsPanel, { type GenerationSettings } from '@/components/SettingsPanel'
 
 type Section = {
   id: string
@@ -118,9 +118,23 @@ export default function AdminPage() {
 
   // UI state
   const [loading, setLoading] = useState(true)
-  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
-  const [hideDefaultReference, setHideDefaultReference] = useState(false)
+
+  // Generation settings state
+  const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
+    model: 'flux-pro-1.1-ultra',
+    width: 1024,
+    height: 1024,
+    aspectRatio: '16:9',
+    outputFormat: 'jpeg',
+    seed: '',
+    safetyTolerance: 2,
+    promptUpsampling: false,
+    raw: false,
+    imagePromptStrength: 0.1,
+    steps: 28,
+    guidance: 3.5,
+  })
 
   useEffect(() => {
     loadSections()
@@ -139,13 +153,8 @@ export default function AdminPage() {
     if (selectedSection) {
       loadActivePrompt()
       loadPendingImages()
-      // Don't reload all images here - they're already loaded globally
-      // Load reference image URL
-      const localPhoto = getLocalPhotoUrl(selectedSection.section_code)
-      setReferenceImageUrl(localPhoto || selectedSection.current_image_url)
       // Clear selected reference when changing sections
       setSelectedReferenceImageUrl(null)
-      setHideDefaultReference(false)
     }
   }, [selectedSection])
 
@@ -269,13 +278,8 @@ export default function AdminPage() {
   }
 
   function handleClearReference() {
-    if (selectedReferenceImageUrl) {
-      // Clear selected reference
-      setSelectedReferenceImageUrl(null)
-    } else {
-      // Hide default reference
-      setHideDefaultReference(true)
-    }
+    // Clear selected reference (primary image will still show as reference)
+    setSelectedReferenceImageUrl(null)
   }
 
   async function handleRemoveGlobalReference(imageId: string) {
@@ -477,8 +481,9 @@ export default function AdminPage() {
               <ImageGenerator
                 section={selectedSection}
                 prompt={activePrompt}
+                settings={generationSettings}
                 onImageGenerated={handleImageGenerated}
-                referenceImageUrl={hideDefaultReference ? null : referenceImageUrl}
+                referenceImageUrl={selectedSection.current_image_url}
                 selectedReferenceImageUrl={selectedReferenceImageUrl}
                 globalReferences={globalReferences}
                 onClearReference={handleClearReference}
@@ -497,6 +502,19 @@ export default function AdminPage() {
                 section={selectedSection}
                 prompt={activePrompt}
                 onPromptUpdate={handlePromptUpdate}
+              />
+            </Collapsible>
+
+            {/* Prompt History */}
+            <Collapsible
+              title="📝 Prompt History"
+              description="Previous versions for this section"
+              defaultOpen={false}
+            >
+              <PromptHistory
+                section={selectedSection}
+                activePrompt={activePrompt}
+                onPromptRestore={handlePromptUpdate}
               />
             </Collapsible>
 
@@ -533,23 +551,12 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Right Column - Settings & History (1/3) */}
+          {/* Right Column - Settings (1/3) */}
           <div className="lg:col-span-1 space-y-6">
-            <SettingsPanel />
-
-            {selectedSection && activePrompt && (
-              <Collapsible
-                title="📝 Prompt History"
-                description="Previous versions for this section"
-                defaultOpen={false}
-              >
-                <PromptHistory
-                  section={selectedSection}
-                  activePrompt={activePrompt}
-                  onPromptRestore={handlePromptUpdate}
-                />
-              </Collapsible>
-            )}
+            <SettingsPanel
+              settings={generationSettings}
+              onSettingsChange={setGenerationSettings}
+            />
           </div>
         </div>
       </div>
