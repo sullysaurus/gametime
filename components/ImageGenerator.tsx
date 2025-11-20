@@ -318,13 +318,13 @@ export default function ImageGenerator({ section, prompt, onImageGenerated, refe
               <div className="text-sm font-semibold text-gray-300">
                 {selectedReferenceImageUrl ? '🎨 Selected Reference Image' : 'Reference Image'} ({isUltra ? 'img2img' : 'input image'})
               </div>
-              {selectedReferenceImageUrl && onClearReference && (
+              {onClearReference && (
                 <button
                   onClick={onClearReference}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
                   disabled={generating}
                 >
-                  Clear Reference
+                  {selectedReferenceImageUrl ? 'Clear Reference' : 'Remove Reference'}
                 </button>
               )}
             </div>

@@ -121,6 +121,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [selectedReferenceImageUrl, setSelectedReferenceImageUrl] = useState<string | null>(null)
+  const [hideDefaultReference, setHideDefaultReference] = useState(false)
   const [imageFilter, setImageFilter] = useState<{section?: string; status?: string}>({})
   const [promptFilter, setPromptFilter] = useState<{tag?: string; template?: boolean}>({})
 
@@ -149,6 +150,7 @@ export default function AdminPage() {
       setReferenceImageUrl(localPhoto || selectedSection.current_image_url)
       // Clear selected reference when changing sections
       setSelectedReferenceImageUrl(null)
+      setHideDefaultReference(false)
     }
   }, [selectedSection])
 
@@ -302,7 +304,13 @@ export default function AdminPage() {
   }
 
   function handleClearReference() {
-    setSelectedReferenceImageUrl(null)
+    if (selectedReferenceImageUrl) {
+      // Clear selected reference
+      setSelectedReferenceImageUrl(null)
+    } else {
+      // Hide default reference
+      setHideDefaultReference(true)
+    }
   }
 
   async function handleRemoveGlobalReference(imageId: string) {
@@ -421,7 +429,7 @@ export default function AdminPage() {
                   section={selectedSection}
                   prompt={activePrompt}
                   onImageGenerated={handleImageGenerated}
-                  referenceImageUrl={referenceImageUrl}
+                  referenceImageUrl={hideDefaultReference ? null : referenceImageUrl}
                   selectedReferenceImageUrl={selectedReferenceImageUrl}
                   globalReferences={globalReferences}
                   onClearReference={handleClearReference}
