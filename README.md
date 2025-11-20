@@ -1,282 +1,396 @@
 # Red Rocks AI Image Generator
 
-A Next.js application for generating, comparing, and managing AI-generated concert venue images for Red Rocks Amphitheatre sections using multiple AI providers (OpenAI, Claude, Gemini).
+A production-ready Next.js application for generating, managing, and deploying AI-generated concert venue images using Black Forest Labs' FLUX models. Built for Red Rocks Amphitheatre ticket sections with a complete admin workflow, version-controlled prompts, and advanced img2img capabilities.
 
-## Features
+## 🎯 Project Overview
 
-- 🎨 **AI Image Generation**: Generate stunning concert venue images using DALL-E 3, GPT-Image, Stable Diffusion, and FLUX
-- 🤖 **Multi-Provider Text AI**: Use Claude or Gemini for prompt enhancement and text generation
-- 🔄 **Model Switching**: Easily switch between different AI models and providers
-- 📊 **Image Comparison**: Side-by-side comparison of original vs generated images
-- ✅ **Approve/Reject Workflow**: Review and approve images before they go live
-- ✏️ **Prompt Editor**: Edit and version control your image generation prompts
-- 📝 **Iteration Tracking**: Keep track of all prompt versions and generated images
-- 🎫 **Public Ticket Page**: Display approved images on a Gametime-style ticket listing
+This application streamlines the creation of high-quality venue section images for ticket marketplaces. It features a sophisticated admin interface for prompt engineering, image generation with multiple FLUX model variants, approval workflows, and automatic deployment to production with Supabase Storage integration.
 
-## Tech Stack
+## 🚀 Technology Stack
 
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **AI Providers**:
-  - OpenAI (image generation with DALL-E 3, GPT-Image)
-  - Anthropic Claude (text generation, prompt enhancement)
-  - Google Gemini (text generation alternative)
-- **AI SDK**: Vercel AI SDK (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/openai`)
-- **Deployment**: Vercel
+### Frontend & Framework
+- **Next.js 16.0.3** - React framework with App Router and Server Components
+- **TypeScript** - Full type safety across the application
+- **Tailwind CSS** - Utility-first styling with custom design system
+- **React Hooks** - State management with useState, useEffect
 
-## Prerequisites
+### AI & Image Generation
+- **Black Forest Labs FLUX Models** - State-of-the-art text-to-image generation
+  - **FLUX Pro 1.1 Ultra** - Highest quality (up to 4MP), supports img2img
+  - **FLUX Pro 1.1** - Fast generation with excellent quality
+  - **FLUX Pro** - Original pro model for standard workflows
+  - **FLUX Kontext (max/pro/dev)** - Specialized img2img transformation models
+  - **FLUX Dev** - Development model with configurable steps and guidance
 
-- Node.js 18+
-- Supabase account
-- **API Keys** (at least one required):
-  - OpenAI API key (for image generation)
-  - Anthropic API key (for Claude text features)
-  - Google API key (for Gemini text features)
-- Vercel account (for deployment and optional AI Gateway)
+### Database & Storage
+- **Supabase PostgreSQL** - Relational database for structured data
+  - Sections, prompts, generated images, and metadata
+  - Row-level security (RLS) policies
+  - Real-time subscriptions for live updates
+- **Supabase Storage** - Object storage for generated images
+  - Public bucket with CDN caching (1-year cache headers)
+  - Server-side image processing with Sharp
 
-## Setup Instructions
+### Image Processing
+- **Sharp** - High-performance Node.js image processing
+  - WebP conversion (80% quality for optimal size/quality ratio)
+  - Automatic resizing (max 2048px, maintains aspect ratio)
+  - Server-side processing before storage upload
 
-### 1. Clone and Install Dependencies
+### Deployment
+- **Vercel** - Edge deployment with automatic CI/CD
+- **GitHub** - Version control and collaboration
 
-```bash
-cd /Users/daniel-sullivan/projects/gametime-ai
-npm install
+## 🏗️ Architecture Highlights
+
+### Prompt Management System
+
+**Version-Controlled Prompt Engineering**
+- Every prompt is versioned with incremental version numbers
+- Active/inactive status tracking for A/B testing
+- Full prompt history with rollback capability
+- Template system for reusable prompts across sections
+- Tags and notes for organizational context
+
+```typescript
+type Prompt = {
+  id: string
+  section_id: string
+  prompt_text: string          // Main generation prompt
+  negative_prompt: string | null // What to avoid
+  version: number               // Incremental versioning
+  is_active: boolean           // Only one active per section
+  notes: string | null         // Internal documentation
+  tags: string[]               // Categorization
+  is_template: boolean         // Reusable across sections
+  created_at: string
+}
 ```
 
-### 2. Set Up Supabase
+**Prompt Workflow:**
+1. Edit prompt text in dedicated editor
+2. Save creates new version (increments counter)
+3. Automatically sets as active, deactivates previous
+4. Full history preserved for rollback
+5. Can restore any previous version
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Go to the SQL Editor in your Supabase dashboard
-3. Copy the contents of `supabase-schema.sql` and run it in the SQL Editor
-4. This will create all necessary tables, indexes, and seed data
+### Image Generation Pipeline
 
-### 3. Configure Environment Variables
+**Multi-Model FLUX Integration**
+- Dynamic model selection with real-time parameter adjustment
+- Model-specific features (aspect ratios, raw mode, dev parameters)
+- Reference image support for img2img workflows
+- Configurable generation settings persisted with each image
 
-Create a `.env.local` file in the root directory:
-
-```bash
-cp .env.local.example .env.local
+**Generation Settings:**
+```typescript
+type GenerationSettings = {
+  model: FluxModel                    // Selected FLUX variant
+  width: number                       // For non-aspect-ratio models
+  height: number
+  aspectRatio: string                 // For Ultra/Kontext (16:9, 1:1, etc.)
+  outputFormat: 'jpeg' | 'png'
+  seed: string                        // Reproducibility
+  safetyTolerance: number            // 0-6 content filtering
+  promptUpsampling: boolean          // AI prompt enhancement
+  raw: boolean                       // Ultra-only authentic photography mode
+  imagePromptStrength: number        // Reference image influence (0-1)
+  steps: number                      // Dev model inference steps
+  guidance: number                   // Dev model guidance scale
+}
 ```
 
-Then fill in your credentials:
+**Generation Flow:**
+1. Select section → Loads active prompt
+2. Configure settings in right panel
+3. Primary section image automatically used as reference (for Ultra/Kontext)
+4. Click generate → API processes request
+5. Image generated via FLUX API
+6. Server-side compression to WebP
+7. Upload to Supabase Storage
+8. Database record created with full metadata
+9. Review queue populated for approval
+
+### Image Approval Workflow
+
+**Structured Review Process**
+- Generated images enter "pending" status
+- Side-by-side comparison with current section image
+- Approve → Sets as primary section image
+- Reject → Marks as rejected (kept for history)
+- Pin as global reference → Available across all sections
+- All actions tracked with timestamps
+
+**Image Metadata:**
+```typescript
+type GeneratedImage = {
+  id: string
+  section_id: string
+  prompt_id: string | null
+  image_url: string                  // Supabase Storage URL
+  model_name: string                 // FLUX variant used
+  model_provider: 'black-forest-labs'
+  status: 'pending' | 'approved' | 'rejected'
+  generation_settings: object        // Full settings snapshot
+  comparison_notes: string | null    // Review feedback
+  is_global_reference: boolean       // Available to all sections
+  created_at: string
+  approved_at: string | null
+}
+```
+
+### Storage Architecture
+
+**Server-Side Image Processing**
+- No base64 encoding (removed for performance and size)
+- All images processed server-side with Sharp
+- WebP format for 80% quality at ~60% smaller size than PNG
+- Automatic resizing to max 2048px (maintains aspect ratio)
+- Uploaded to Supabase Storage with 1-year cache headers
+
+**Storage Flow:**
+```typescript
+// 1. Fetch image from FLUX API
+const imageResponse = await fetch(fluxApiUrl)
+const buffer = await imageResponse.arrayBuffer()
+
+// 2. Server-side compression
+const compressedImage = await sharp(Buffer.from(buffer))
+  .webp({ quality: 80 })
+  .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+  .toBuffer()
+
+// 3. Upload to Supabase Storage
+const { data, error } = await supabaseAdmin.storage
+  .from('generated-images')
+  .upload(filePath, compressedImage, {
+    contentType: 'image/webp',
+    cacheControl: '31536000', // 1 year
+    upsert: false
+  })
+
+// 4. Get public URL and store in database
+const publicUrl = supabaseAdmin.storage
+  .from('generated-images')
+  .getPublicUrl(filePath).data.publicUrl
+```
+
+## 🎨 Admin Interface Features
+
+### Streamlined UX Design
+
+**Section Carousel**
+- Horizontal scrolling section selector
+- Current image thumbnails with badges
+- Upload/delete functionality on hover
+- Visual indication of selected section
+
+**Linear Workflow (Always Visible):**
+1. **Current Section Image** - Shows primary image (custom or local fallback)
+2. **Edit Prompt** - Inline prompt editor with save versioning
+3. **Generate New Image** - Single-click generation with settings in sidebar
+4. **Review Queue** - Pending images appear automatically
+
+**Settings Panel (Right Sidebar):**
+- Model selection with descriptions
+- Dimensions or aspect ratio (based on model)
+- Output format, seed, safety tolerance
+- Reference image influence slider
+- Advanced settings (collapsible):
+  - Prompt upsampling toggle
+  - Raw mode (Ultra only)
+  - Dev model steps/guidance
+
+**Prompt History (Optional):**
+- Collapsed by default in right sidebar
+- Shows all previous versions
+- One-click restore to any version
+- Preserves full prompt evolution
+
+### Global Reference System
+
+**Cross-Section Image Reuse**
+- Pin any approved image as global reference
+- Available in all section generators
+- Visual grid selector with section badges
+- One-click selection as reference image
+- Remove from global library option
+
+## 📊 Database Schema
+
+### Core Tables
+
+**sections** - Venue section definitions
+```sql
+CREATE TABLE sections (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  section_code TEXT NOT NULL UNIQUE,
+  category TEXT,
+  current_image_url TEXT,           -- Primary display image
+  row_info TEXT,
+  price DECIMAL(10,2),
+  deal_badge TEXT,                  -- "CHEAPEST", "AMAZING DEAL", etc.
+  value_badge TEXT,                 -- "TOP 5% VALUE", etc.
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**prompts** - Version-controlled prompt system
+```sql
+CREATE TABLE prompts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  section_id UUID REFERENCES sections(id) ON DELETE CASCADE,
+  prompt_text TEXT NOT NULL,
+  negative_prompt TEXT,
+  version INTEGER NOT NULL,          -- Auto-incrementing version
+  is_active BOOLEAN DEFAULT true,
+  notes TEXT,
+  tags TEXT[] DEFAULT '{}',
+  is_template BOOLEAN DEFAULT false, -- Reusable template
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(section_id, version)        -- One version per section
+);
+```
+
+**generated_images** - All generated images with metadata
+```sql
+CREATE TABLE generated_images (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  section_id UUID REFERENCES sections(id) ON DELETE CASCADE,
+  prompt_id UUID REFERENCES prompts(id) ON DELETE SET NULL,
+  image_url TEXT NOT NULL,
+  model_name TEXT NOT NULL,
+  model_provider TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',     -- pending/approved/rejected
+  generation_settings JSONB,         -- Full settings snapshot
+  comparison_notes TEXT,
+  is_global_reference BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW(),
+  approved_at TIMESTAMP
+);
+```
+
+### Indexes for Performance
+
+```sql
+CREATE INDEX idx_prompts_section_active ON prompts(section_id, is_active);
+CREATE INDEX idx_images_section_status ON generated_images(section_id, status);
+CREATE INDEX idx_images_global_ref ON generated_images(is_global_reference);
+```
+
+## 🔑 Environment Variables
 
 ```env
 # Supabase (Required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For storage uploads
 
-# OpenAI (Required for image generation)
-OPENAI_API_KEY=sk-your-openai-api-key
+# Black Forest Labs (Required)
+BFL_API_KEY=your-black-forest-labs-api-key
 
-# Claude (Optional - for text features)
-ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
-
-# Gemini (Optional - alternative to Claude)
-GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-key
-
-# Vercel AI Gateway (Optional - for analytics/caching)
-# AI_GATEWAY_API_KEY=your-gateway-token
-# AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
+# Optional
+NODE_ENV=production
 ```
 
-**Where to find these:**
-- Supabase URL & Key: Settings → API in your Supabase dashboard
-- OpenAI API Key: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- Anthropic API Key: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
-- Google AI API Key: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-- Vercel AI Gateway: [vercel.com/docs/ai-gateway](https://vercel.com/docs/ai-gateway)
+## 🚀 Getting Started
 
-### 4. Run Development Server
+### Prerequisites
+- Node.js 18+
+- Supabase account
+- Black Forest Labs API key
+
+### Installation
 
 ```bash
+# Clone repository
+git clone https://github.com/sullysaurus/gametime.git
+cd gametime-ai
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your credentials
+
+# Run database migrations
+# (Execute supabase-schema.sql in Supabase SQL editor)
+
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the public ticket page.
+### Deployment
 
-Access the admin dashboard at [http://localhost:3000/admin](http://localhost:3000/admin).
+```bash
+# Build for production
+npm run build
 
-## Usage
-
-### Admin Dashboard
-
-1. Navigate to `/admin`
-2. Select a section from the sidebar
-3. **Edit Prompt**: Click "Edit Prompt" to modify the generation prompt
-4. **Generate Image**: Select a model and click "Generate Image"
-5. **Review**: Compare the new image with the current one
-6. **Approve/Reject**: Approve to set as the current image, or reject to discard
-
-#### Model Presets & Advanced Controls
-
-- **Model presets**: Choose between DALL·E 3 (Ultra HD), GPT-Image 1 (Balanced), Stable Diffusion 3 (Detail), and FLUX.1 Pro (Creative). Each preset shows its recommended defaults but you can tweak them freely.
-- **Size**: Accepts any `WIDTHxHEIGHT` value. Autocomplete lists the common 1024/1792 aspect ratios.
-- **Quality**: Toggle `standard` vs `hd` for OpenAI models. HD consumes more credits but yields sharper textures.
-- **Style**: Switch between `vivid` (high saturation) and `natural` (cinematic neutrality) for models that support it.
-- **Background**: Supply `transparent`, `white`, hex colors, etc.—especially useful for GPT-Image 1 cutouts.
-- All selected settings are logged alongside the Supabase record to make reproducing a winning combo trivial.
-- **Reference Enhancements**: When you pick a section we automatically pull in its current public photo. Switch on “Use reference as input” (available for GPT-Image 1) to feed that photo into the generation call so you can iterate on the exact angle/lighting you already show on the ticketing page.
-
-### Public Page
-
-- Visit the homepage (`/`) to see all sections with their approved images
-- Images display with badges (CHEAPEST, AMAZING DEAL, etc.)
-- Shows pricing and section information
-
-## Database Schema
-
-### Tables
-
-**sections**: Stores Red Rocks venue sections
-- Section name, code, category
-- Current image URL
-- Pricing and badge information
-
-**prompts**: Version-controlled prompts for image generation
-- Linked to sections
-- Tracks prompt text, negative prompts
-- Version numbers and active status
-
-**generated_images**: All generated images with metadata
-- Links to section and prompt
-- Model information
-- Status (pending, approved, rejected)
-- Generation settings and comparison notes
-
-## Deployment
-
-### Deploy to Vercel
-
-1. **Push your code to GitHub** (if not already done):
-   ```bash
-   git add .
-   git commit -m "Ready for deployment"
-   git push origin main
-   ```
-
-2. **Connect to Vercel**:
-   - Go to [vercel.com](https://vercel.com) and sign in
-   - Click "Add New Project"
-   - Import your GitHub repository: `sullysaurus/gametime`
-   - Vercel will auto-detect it as a Next.js project
-
-3. **Configure Environment Variables**:
-   Before deploying, add these in the Vercel dashboard (Settings → Environment Variables):
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://aamjoctqvztopmmultsl.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   AI_GATEWAY_API_KEY=vck_3tH9HOmrKG30QUurK3hdz2TnbwWFY2g7vWeDIYT1yiBxCCdmOf1Cti7V
-   AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
-   ```
-
-4. **Deploy!**
-   - Click "Deploy"
-   - Vercel will build and deploy your application
-   - You'll get a URL like `https://gametime-xyz.vercel.app`
-
-### Setting Up Vercel AI Gateway (Optional)
-
-Vercel AI Gateway allows you to:
-- Switch between AI providers seamlessly
-- Monitor and log all requests
-- Implement rate limiting and caching
-
-See `docs/vercel-ai-gateway.md` for the full setup guide. At minimum you will need:
-
-1. A Gateway URL that routes to your configured models (DALL·E 3, GPT-Image 1, Stable Diffusion 3, FLUX.1 Pro)
-2. A Gateway Access Token (used as `OPENAI_API_KEY` locally)
-3. `.env.local` updated with both `OPENAI_API_KEY` and `AI_GATEWAY_URL`
-
-> ℹ️ DALL·E 3 + GPT-Image 1 run directly against OpenAI, while Stable Diffusion 3 and FLUX.1 Pro require the gateway to translate the OpenAI-compatible request into those providers.
-
-## Adding More AI Models
-
-To add support for additional models (Stable Diffusion, Midjourney, etc.):
-
-1. Install the necessary SDK (e.g., `@replicate/replicate`)
-2. Update `app/api/generate-image/route.ts` to handle the new model
-3. Add the model to the `MODEL_PRESETS` array in `components/ImageGenerator.tsx`
-
-Example for Replicate:
-
-```typescript
-// Install: npm install replicate
-
-import Replicate from "replicate"
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-})
-
-// In the API route:
-if (model === 'stable-diffusion-xl') {
-  const output = await replicate.run(
-    "stability-ai/sdxl:...",
-    { input: { prompt } }
-  )
-  // Handle output...
-}
+# Deploy to Vercel
+git push origin main  # Automatic deployment via GitHub integration
 ```
 
-## Project Structure
+## 📈 Performance Optimizations
 
-```
-gametime-ai/
-├── app/
-│   ├── page.tsx                 # Public ticket listing
-│   ├── admin/
-│   │   └── page.tsx             # Admin dashboard
-│   └── api/
-│       ├── generate-image/       # Image generation endpoint
-│       └── images/[id]/status/   # Image status update endpoint
-├── components/
-│   ├── ImageGenerator.tsx       # Image generation UI
-│   ├── ImageComparison.tsx      # Side-by-side comparison
-│   └── PromptEditor.tsx         # Prompt editing interface
-├── lib/
-│   ├── supabase.ts              # Supabase client
-│   └── database.types.ts        # TypeScript types
-├── supabase-schema.sql          # Database schema
-└── README.md
-```
+1. **Image Optimization**
+   - WebP format reduces file size by ~60% vs PNG
+   - Server-side Sharp processing (faster than client-side)
+   - CDN caching with 1-year headers
+   - Max 2048px prevents unnecessarily large files
 
-## Features Roadmap
+2. **Database Efficiency**
+   - Indexed queries for fast section/prompt lookups
+   - Single active prompt per section (no complex filtering)
+   - JSONB for flexible metadata storage
 
-- [ ] Batch image generation for all sections
-- [ ] Image history view
-- [ ] Prompt templates library
-- [ ] A/B testing different prompts
-- [ ] Image optimization and CDN integration
-- [ ] Admin authentication
-- [ ] Webhook notifications for new images
+3. **API Design**
+   - Server-side image processing reduces client load
+   - Single endpoint for all FLUX models
+   - Proper error handling with detailed logs
 
-## Troubleshooting
+## 🎯 Key Technical Decisions
 
-### Images not loading
+### Why FLUX Models?
+- Superior quality vs DALL-E/Stable Diffusion for venue imagery
+- img2img support for iterating on existing photos
+- Multiple model variants for different use cases
+- Raw mode for authentic photography aesthetics
 
-- Check that image URLs are accessible
-- Verify Next.js `next.config.js` allows the image domains
-- Check browser console for CORS errors
+### Why WebP + Server-Side Processing?
+- 60% smaller files than PNG with minimal quality loss
+- Faster page loads on public ticket page
+- Server-side Sharp processing more reliable than client-side
+- Consistent compression across all generated images
 
-### Generation fails
+### Why Version-Controlled Prompts?
+- Track prompt evolution and effectiveness
+- A/B test different approaches
+- Rollback to successful prompts
+- Document learnings in notes/tags
 
-- Verify OpenAI API key is correct
-- Check API key has sufficient credits
-- Review error messages in browser console and server logs
+### Why Supabase Storage vs Base64?
+- Scalability (base64 bloats database size)
+- CDN caching for faster delivery
+- Proper HTTP caching headers
+- Separation of concerns (storage vs data)
 
-### Database connection issues
+## 🔮 Future Enhancements
 
-- Verify Supabase URL and anon key are correct
-- Check that RLS policies allow access
-- Confirm database schema was created successfully
+- [ ] Batch generation across all sections
+- [ ] Automated prompt optimization with analytics
+- [ ] Image variation generation from approved images
+- [ ] Cost tracking per section/model
+- [ ] API rate limiting and queue management
+- [ ] Admin authentication with role-based access
+- [ ] Webhook notifications for approvals
+- [ ] Analytics dashboard for generation metrics
 
-## License
+## 📝 License
 
 MIT
 
-## Contributing
+---
 
-Contributions welcome! Please open an issue or PR.
+**Built with ❤️ for demonstrating full-stack AI integration, database design, and production-ready image processing workflows.**
