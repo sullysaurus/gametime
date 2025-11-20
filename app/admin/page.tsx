@@ -134,6 +134,8 @@ export default function AdminPage() {
     imagePromptStrength: 0.1,
     steps: 28,
     guidance: 3.5,
+    loras: [],
+    focusArea: 'center-stage',
   })
 
   useEffect(() => {
@@ -252,6 +254,15 @@ export default function AdminPage() {
 
   async function handlePromptUpdate(updatedPrompt: Prompt) {
     setActivePrompt(updatedPrompt)
+  }
+
+  function handlePresetApplied(promptTemplate: string) {
+    if (activePrompt) {
+      // Update the active prompt with the preset template (in memory only)
+      // The PromptEditor component will handle saving to database when user edits
+      const updatedPrompt = { ...activePrompt, prompt_text: promptTemplate }
+      setActivePrompt(updatedPrompt)
+    }
   }
 
   async function handleImageGenerated() {
@@ -533,6 +544,10 @@ export default function AdminPage() {
             <SettingsPanel
               settings={generationSettings}
               onSettingsChange={setGenerationSettings}
+              onPresetApplied={handlePresetApplied}
+              sectionName={selectedSection?.name}
+              sectionCode={selectedSection?.section_code}
+              rowInfo={selectedSection?.row_info || undefined}
             />
 
             {/* Prompt History - Optional */}
