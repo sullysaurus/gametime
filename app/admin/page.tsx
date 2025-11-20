@@ -134,6 +134,7 @@ export default function AdminPage() {
     imagePromptStrength: 0.1,
     steps: 28,
     guidance: 3.5,
+    loras: [],
   })
 
   useEffect(() => {
