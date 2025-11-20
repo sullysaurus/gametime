@@ -135,6 +135,7 @@ export default function AdminPage() {
     steps: 28,
     guidance: 3.5,
     loras: [],
+    focusArea: 'center-stage',
   })
 
   useEffect(() => {

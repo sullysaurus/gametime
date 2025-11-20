@@ -24,6 +24,7 @@ export type GenerationSettings = {
   steps: number
   guidance: number
   loras: LoRAWeight[]
+  focusArea: string
 }
 
 type Preset = {
@@ -45,7 +46,7 @@ const CONCERT_PRESETS: Preset[] = [
       imagePromptStrength: 0.75,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography of {SECTION} seating view, epic wide-angle stage shot, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
+    promptTemplate: 'Professional concert photography of {SECTION} seating view, epic wide-angle stage shot focused on {FOCUS}, dramatic stage lighting with vibrant colors, silhouette of performer against bright backdrop, volumetric light beams cutting through atmospheric smoke, crowd energy visible, photorealistic, shot on Sony A7III 24mm f/1.4, high contrast, cinematic composition, enhanced colors and magical atmosphere, 8k quality',
   },
   {
     id: 'intimate-spotlight',
@@ -57,7 +58,7 @@ const CONCERT_PRESETS: Preset[] = [
       imagePromptStrength: 0.75,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} perspective, intimate close-up portrait of performer, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} perspective, intimate close-up portrait of performer on {FOCUS}, dramatic single spotlight creating strong rim lighting, dark background with subtle atmospheric haze, emotional expression captured mid-performance, shallow depth of field, photorealistic, shot on Canon EOS R5 85mm f/1.2, hyper-detailed face and clothing texture, enhanced dramatic lighting, professional color grading, 8k quality',
   },
   {
     id: 'crowd-energy',
@@ -69,7 +70,7 @@ const CONCERT_PRESETS: Preset[] = [
       imagePromptStrength: 0.7,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} vantage point, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view showing the exact seating layout and perspective, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} vantage point looking at {FOCUS}, massive crowd with hands raised, dynamic stage lighting illuminating thousands of fans, atmospheric smoke and light beams, sense of scale and energy, wide-angle view showing the exact seating layout and perspective, photorealistic, shot on Nikon Z9 14-24mm f/2.8, vibrant enhanced colors, epic magical atmosphere, 8k quality',
   },
   {
     id: 'silhouette-dramatic',
@@ -81,7 +82,7 @@ const CONCERT_PRESETS: Preset[] = [
       imagePromptStrength: 0.8,
       promptUpsampling: true,
     },
-    promptTemplate: 'Professional concert photography from {SECTION} view preserving the exact seating composition, powerful silhouette of performer backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
+    promptTemplate: 'Professional concert photography from {SECTION} view preserving the exact seating composition, powerful silhouette of performer on {FOCUS} backlit by intense stage lights, dramatic color gradient background with purples and oranges, smoke creating atmospheric depth, strong contrast and rim lighting, dynamic pose mid-performance, enhanced magical lighting, photorealistic, shot on Sony A1 50mm f/1.2, cinematic composition, professional color grading, 8k quality',
   },
 ]
 
@@ -144,6 +145,15 @@ const ASPECT_RATIOS = [
   '2:3',
 ]
 
+const FOCUS_AREAS = [
+  { value: 'center-stage', label: 'Center Stage', description: 'Main performer front and center' },
+  { value: 'front-left', label: 'Front Left', description: 'Stage left side focus' },
+  { value: 'front-right', label: 'Front Right', description: 'Stage right side focus' },
+  { value: 'full-stage', label: 'Full Stage', description: 'Wide view of entire stage' },
+  { value: 'crowd-forward', label: 'Crowd Forward', description: 'Front rows and crowd energy' },
+  { value: 'stage-from-crowd', label: 'Stage from Crowd', description: 'Looking toward stage from audience' },
+]
+
 export default function SettingsPanel({
   settings,
   onSettingsChange,
@@ -175,8 +185,13 @@ export default function SettingsPanel({
         sectionDescription = 'this seating section'
       }
 
-      // Replace {SECTION} placeholder with actual section info
-      const finalPrompt = preset.promptTemplate.replace(/{SECTION}/g, sectionDescription)
+      // Get focus area description
+      const focusAreaObj = FOCUS_AREAS.find(f => f.value === settings.focusArea)
+      const focusDescription = focusAreaObj?.label.toLowerCase() || 'center stage'
+
+      // Replace placeholders with actual info
+      let finalPrompt = preset.promptTemplate.replace(/{SECTION}/g, sectionDescription)
+      finalPrompt = finalPrompt.replace(/{FOCUS}/g, focusDescription)
       onPresetApplied(finalPrompt)
     }
   }
@@ -207,6 +222,27 @@ export default function SettingsPanel({
               </div>
             </button>
           ))}
+        </div>
+
+        {/* Focus Area Selector */}
+        <div className="mt-4 pt-4 border-t border-purple-700/30">
+          <label className="text-xs font-medium text-purple-300 mb-2 block">
+            🎯 Stage Focus Area
+          </label>
+          <select
+            value={settings.focusArea}
+            onChange={(e) => updateSetting('focusArea', e.target.value)}
+            className="w-full px-3 py-2 bg-black/40 border border-purple-600/40 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            {FOCUS_AREAS.map((area) => (
+              <option key={area.value} value={area.value}>
+                {area.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            {FOCUS_AREAS.find(a => a.value === settings.focusArea)?.description}
+          </p>
         </div>
       </div>
 
