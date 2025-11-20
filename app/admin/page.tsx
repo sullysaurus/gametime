@@ -52,18 +52,9 @@ type GeneratedImage = {
   is_global_reference: boolean
 }
 
-// Map section codes to local photos
+// Placeholder images removed - sections show "No Image" until custom images are uploaded
 function getLocalPhotoUrl(sectionCode: string): string | null {
-  const mapping: Record<string, string> = {
-    'BL': '/sections/back-left.jpeg',
-    'BLC': '/sections/back-left-center.jpeg',
-    'BRC': '/sections/back-right-center.jpeg',
-    'BR': '/sections/back-right.jpeg',
-    'Pit GA': '/sections/general-admission.jpeg',
-    'Seating GA': '/sections/general-admission.jpeg',
-    'SRO': '/sections/general-admission.jpeg',
-  }
-  return mapping[sectionCode] || null
+  return null
 }
 
 // Sort sections from front to back
