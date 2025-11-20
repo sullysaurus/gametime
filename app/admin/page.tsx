@@ -465,7 +465,7 @@ export default function AdminPage() {
             {/* Main Workflow */}
             {selectedSection && activePrompt && (
               <>
-            {/* Primary Image Manager - Top Priority */}
+            {/* Current Section Image - Always Visible */}
             <SectionImageManager
               section={selectedSection}
               onPrimaryImageChange={handleSectionImageChange}
@@ -473,10 +473,20 @@ export default function AdminPage() {
               localFallbackUrl={getLocalPhotoUrl(selectedSection.section_code)}
             />
 
-            {/* Image Generator */}
+            {/* Prompt Editor - Always Visible */}
+            <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <h3 className="text-lg font-semibold mb-4">✏️ Edit Prompt</h3>
+              <PromptEditor
+                section={selectedSection}
+                prompt={activePrompt}
+                onPromptUpdate={handlePromptUpdate}
+              />
+            </div>
+
+            {/* Image Generator - Collapsible */}
             <Collapsible
-              title="Generate New Image"
-              description="Create AI-generated images using FLUX models"
+              title="✨ Generate New Image"
+              description="Create AI-generated images"
               defaultOpen={true}
             >
               <ImageGenerator
@@ -493,37 +503,11 @@ export default function AdminPage() {
               />
             </Collapsible>
 
-            {/* Prompt Editor */}
-            <Collapsible
-              title="Edit Prompt"
-              description={`Current prompt for ${selectedSection.name}`}
-              defaultOpen={true}
-            >
-              <PromptEditor
-                section={selectedSection}
-                prompt={activePrompt}
-                onPromptUpdate={handlePromptUpdate}
-              />
-            </Collapsible>
-
-            {/* Prompt History */}
-            <Collapsible
-              title="📝 Prompt History"
-              description="Previous versions for this section"
-              defaultOpen={false}
-            >
-              <PromptHistory
-                section={selectedSection}
-                activePrompt={activePrompt}
-                onPromptRestore={handlePromptUpdate}
-              />
-            </Collapsible>
-
-            {/* Pending Images */}
+            {/* Pending Reviews */}
             {pendingImages.length > 0 && (
               <Collapsible
-                title="Pending Reviews"
-                description="Review and approve/reject generated images"
+                title="📋 Review Queue"
+                description="Approve or reject generated images"
                 badge={`${pendingImages.length}`}
                 defaultOpen={true}
               >
@@ -540,14 +524,6 @@ export default function AdminPage() {
                 </div>
               </Collapsible>
             )}
-
-            {pendingImages.length === 0 && (
-              <div className="bg-gray-900 rounded-lg border border-gray-800 p-8 text-center">
-                <p className="text-gray-400">
-                  No pending images. Generate a new image above to get started.
-                </p>
-              </div>
-            )}
               </>
             )}
           </div>
@@ -558,6 +534,21 @@ export default function AdminPage() {
               settings={generationSettings}
               onSettingsChange={setGenerationSettings}
             />
+
+            {/* Prompt History - Optional */}
+            {selectedSection && activePrompt && (
+              <Collapsible
+                title="📝 Prompt History"
+                description="Previous versions"
+                defaultOpen={false}
+              >
+                <PromptHistory
+                  section={selectedSection}
+                  activePrompt={activePrompt}
+                  onPromptRestore={handlePromptUpdate}
+                />
+              </Collapsible>
+            )}
           </div>
         </div>
       </div>

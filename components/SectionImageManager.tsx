@@ -18,46 +18,13 @@ type Props = {
   localFallbackUrl?: string | null
 }
 
-type ApprovedImage = {
-  id: string
-  image_url: string
-  model_name: string
-  created_at: string
-}
-
 export default function SectionImageManager({
   section,
   onPrimaryImageChange,
   onGlobalReferenceAdded,
   localFallbackUrl,
 }: Props) {
-  const [approvedImages, setApprovedImages] = useState<ApprovedImage[]>([])
-  const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
-
-  useEffect(() => {
-    loadApprovedImages()
-  }, [section.id])
-
-  async function loadApprovedImages() {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('generated_images')
-        .select('id, image_url, model_name, created_at')
-        .eq('section_id', section.id)
-        .eq('status', 'approved')
-        .order('approved_at', { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-      setApprovedImages(data || [])
-    } catch (error) {
-      console.error('Error loading approved images:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function handleSetPrimaryImage(imageUrl: string) {
     try {
@@ -178,7 +145,7 @@ export default function SectionImageManager({
 
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-      <h3 className="text-lg font-semibold mb-4">Primary Image Manager</h3>
+      <h3 className="text-lg font-semibold mb-4">📸 Current Section Image</h3>
 
       {/* Current Primary Image */}
       <div className="mb-6">
@@ -223,7 +190,7 @@ export default function SectionImageManager({
       </div>
 
       {/* Upload New Image */}
-      <div className="mb-6">
+      <div>
         <div className="text-sm font-medium text-gray-300 mb-2">
           Upload New Image
         </div>
@@ -237,8 +204,8 @@ export default function SectionImageManager({
               file:mr-4 file:py-2 file:px-4
               file:rounded file:border-0
               file:text-sm file:font-medium
-              file:bg-green-600 file:text-white
-              hover:file:bg-green-700
+              file:bg-blue-600 file:text-white
+              hover:file:bg-blue-700
               file:cursor-pointer
               disabled:opacity-50 disabled:cursor-not-allowed"
           />
@@ -246,47 +213,9 @@ export default function SectionImageManager({
         {uploading && (
           <p className="text-sm text-gray-400 mt-2">Uploading...</p>
         )}
-      </div>
-
-      {/* Previously Approved Images */}
-      <div>
-        <div className="text-sm font-medium text-gray-300 mb-2">
-          Previously Approved Images
-        </div>
-        {loading ? (
-          <p className="text-sm text-gray-400">Loading...</p>
-        ) : approvedImages.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {approvedImages.map((image) => (
-              <button
-                key={image.id}
-                onClick={() => handleSetPrimaryImage(image.image_url)}
-                disabled={section.current_image_url === image.image_url}
-                className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                  section.current_image_url === image.image_url
-                    ? 'border-green-500 opacity-50 cursor-default'
-                    : 'border-gray-700 hover:border-green-500 cursor-pointer'
-                }`}
-              >
-                <Image
-                  src={image.image_url}
-                  alt={`Approved ${section.name}`}
-                  fill
-                  className="object-cover"
-                />
-                {section.current_image_url === image.image_url && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <span className="text-green-400 font-medium">Current</span>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">
-            No approved images yet. Generate and approve images to see them here.
-          </p>
-        )}
+        <p className="text-xs text-gray-500 mt-2">
+          Upload a custom image to use as the primary image for this section
+        </p>
       </div>
     </div>
   )

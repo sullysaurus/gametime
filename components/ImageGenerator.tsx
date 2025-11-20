@@ -165,41 +165,6 @@ export default function ImageGenerator({
     }
   }
 
-  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    setGenerating(true)
-    setError(null)
-
-    try {
-      // Upload the file directly to section image
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('sectionId', section.id)
-
-      const response = await fetch('/api/upload-section-image', {
-        method: 'POST',
-        body: formData
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Upload failed')
-      }
-
-      alert('Image uploaded successfully!')
-      await onImageGenerated()
-    } catch (err) {
-      console.error('Upload error:', err)
-      const message = err instanceof Error ? err.message : 'Failed to upload image'
-      setError(message)
-    } finally {
-      setGenerating(false)
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Global References Selector */}
@@ -290,51 +255,36 @@ export default function ImageGenerator({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors col-span-2"
-        >
-          {generating ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Generating...
-            </span>
-          ) : (
-            'Generate New Image'
-          )}
-        </button>
-
-        {/* File Upload Button */}
-        <label className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg font-medium transition-colors cursor-pointer text-center col-span-2">
-          Choose File to Upload
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={generating}
-          />
-        </label>
-      </div>
+      {/* Generate Button */}
+      <button
+        onClick={handleGenerate}
+        disabled={generating}
+        className="w-full px-6 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold text-lg transition-colors"
+      >
+        {generating ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Generating...
+          </span>
+        ) : (
+          '✨ Generate New Image with AI'
+        )}
+      </button>
 
       {/* Error Display */}
       {error && (
@@ -345,12 +295,12 @@ export default function ImageGenerator({
       )}
 
       {/* Tips */}
-      <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-400">
-        <p className="font-medium text-gray-300 mb-1">🚀 Quick Tips:</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Use <strong>Generate</strong> to create AI images based on your prompt</li>
-          <li>Use <strong>Choose File</strong> to upload your own custom image</li>
-          <li>Adjust all generation settings in the panel on the right →</li>
+      <div className="bg-gray-800 rounded-lg p-3 text-xs text-gray-400">
+        <p className="font-medium text-gray-300 mb-1">💡 Tips:</p>
+        <ul className="list-disc list-inside space-y-0.5">
+          <li>Adjust all settings in the right panel →</li>
+          <li>Upload custom images in "Current Section Image" above</li>
+          <li>Current section image automatically used as reference</li>
         </ul>
       </div>
     </div>
