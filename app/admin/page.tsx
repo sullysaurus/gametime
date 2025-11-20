@@ -137,6 +137,8 @@ export default function AdminPage() {
     loras: [],
     focusArea: 'center-stage',
     viewingPerspective: 'keep-original',
+    referenceImage: null,
+    img2imgStrength: 0.85,
   })
 
   useEffect(() => {

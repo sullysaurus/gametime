@@ -25,6 +25,9 @@ export type GenerationSettings = {
   loras: LoRAWeight[]
   focusArea: string
   viewingPerspective: string
+  // Image-to-image settings
+  referenceImage: string | null  // Base64 data URI or URL
+  img2imgStrength: number  // 0.0-1.0, default 0.85
 }
 
 type Preset = {
@@ -527,6 +530,106 @@ export default function SettingsPanel({
                   <p className="text-xs text-gray-500 mt-1">
                     Higher = follows prompt more closely
                   </p>
+                </div>
+
+                {/* Image-to-Image Configuration */}
+                <div className="border-t border-gray-700 pt-4">
+                  <div className="mb-2">
+                    <label className="text-xs text-gray-300 font-medium block mb-2">
+                      Reference Image (Optional)
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Upload a reference image to guide generation. Perfect for creating consistent venue shots based on real photos.
+                    </p>
+                  </div>
+
+                  {settings.referenceImage ? (
+                    <div className="space-y-3">
+                      {/* Image Preview */}
+                      <div className="relative bg-gray-800 border border-gray-700 rounded p-2">
+                        <img
+                          src={settings.referenceImage}
+                          alt="Reference"
+                          className="w-full h-auto rounded"
+                        />
+                        <button
+                          onClick={() => updateSetting('referenceImage', null)}
+                          className="absolute top-3 right-3 text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded shadow-lg"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      {/* Transformation Strength */}
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-1">
+                          Transformation Strength: {settings.img2imgStrength.toFixed(2)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={settings.img2imgStrength}
+                          onChange={(e) => updateSetting('img2imgStrength', parseFloat(e.target.value))}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Keep Original (0.0)</span>
+                          <span>Transform (1.0)</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Lower values (0.3-0.5) preserve composition, higher values (0.7-0.9) allow more creative freedom
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label
+                        htmlFor="reference-image-upload"
+                        className="block w-full px-3 py-8 bg-gray-800 border-2 border-dashed border-gray-700 hover:border-blue-500 rounded cursor-pointer text-center transition-colors"
+                      >
+                        <div className="text-xs text-gray-400">
+                          <div className="mb-1">📸 Click to upload reference image</div>
+                          <div className="text-gray-600">PNG, JPG, WebP up to 10MB</div>
+                        </div>
+                      </label>
+                      <input
+                        id="reference-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            // Validate file size (10MB max)
+                            if (file.size > 10 * 1024 * 1024) {
+                              alert('File too large. Maximum size is 10MB.')
+                              return
+                            }
+
+                            // Convert to base64 data URI
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                              const dataUri = event.target?.result as string
+                              updateSetting('referenceImage', dataUri)
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-3 text-xs text-gray-500 bg-gray-800 border border-gray-700 rounded p-2">
+                    <div className="font-medium text-gray-400 mb-1">💡 Best Practices:</div>
+                    <div className="space-y-1 text-gray-500">
+                      <div>• Use for consistent Red Rocks section views</div>
+                      <div>• Combine with LoRAs for enhanced realism</div>
+                      <div>• Try strength 0.5-0.7 for best balance</div>
+                      <div>• Higher strength = more artistic freedom</div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* LoRA Configuration */}

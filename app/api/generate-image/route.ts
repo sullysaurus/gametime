@@ -57,6 +57,9 @@ type GenerateImagePayload = {
   steps?: number  // For dev model
   guidance?: number  // For dev model
   loras?: LoRAWeight[]  // LoRA models (for dev model)
+  // Image-to-image for fal.ai flux-dev
+  reference_image_url?: string | null  // URL or base64 data URI for img2img
+  img2img_strength?: number  // 0.0-1.0, controls transformation strength (default: 0.85)
 }
 
 // Convert width/height to aspect ratio for Ultra model
@@ -238,11 +241,17 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
 }
 
 async function generateWithFal(payload: GenerateImagePayload): Promise<string> {
-  console.log('Generating image with fal.ai flux-lora...', {
+  // Determine if this is image-to-image or text-to-image
+  const isImg2Img = payload.reference_image_url && payload.reference_image_url.trim() !== ''
+  const endpoint = isImg2Img ? 'fal-ai/flux-lora/image-to-image' : 'fal-ai/flux-lora'
+
+  console.log(`Generating image with fal.ai ${endpoint}...`, {
     prompt: payload.prompt.substring(0, 100),
     loras: payload.loras,
     steps: payload.steps,
     guidance: payload.guidance,
+    img2img: isImg2Img,
+    strength: payload.img2img_strength,
   })
 
   // Build fal.ai request
@@ -265,6 +274,13 @@ async function generateWithFal(payload: GenerateImagePayload): Promise<string> {
     input.loras = payload.loras
   }
 
+  // Add image-to-image parameters if reference image provided
+  if (isImg2Img) {
+    input.image_url = payload.reference_image_url
+    input.strength = payload.img2img_strength ?? 0.85
+    console.log('Using reference image for img2img transformation')
+  }
+
   // Handle image size - fal.ai prefers named sizes but also accepts width/height
   if (payload.aspect_ratio) {
     input.image_size = payload.aspect_ratio
@@ -275,8 +291,8 @@ async function generateWithFal(payload: GenerateImagePayload): Promise<string> {
     }
   }
 
-  // Call fal.ai API
-  const result = await fal.subscribe('fal-ai/flux-lora', {
+  // Call fal.ai API with appropriate endpoint
+  const result = await fal.subscribe(endpoint, {
     input,
     logs: true,
     onQueueUpdate: (update) => {

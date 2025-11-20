@@ -145,6 +145,12 @@ export default function ImageGenerator({
             requestBody.loras = validLoras
           }
         }
+
+        // Add image-to-image parameters if reference image provided
+        if (settings.referenceImage) {
+          requestBody.reference_image_url = settings.referenceImage
+          requestBody.img2img_strength = settings.img2imgStrength
+        }
       }
 
       const response = await fetch('/api/generate-image', {
