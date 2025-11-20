@@ -313,17 +313,6 @@ export default function SettingsPanel({ settings, onSettingsChange }: Props) {
           </div>
         </Collapsible>
       </div>
-
-      {/* Info */}
-      <div className="bg-gray-900 rounded-lg border border-gray-800 p-3">
-        <div className="text-xs text-gray-400 space-y-1">
-          <div className="font-medium text-gray-300 mb-2">Storage Info</div>
-          <div>Format: WebP (80% quality)</div>
-          <div>Max: 2048px</div>
-          <div>Bucket: generated-images</div>
-          <div>Cache: 1 year</div>
-        </div>
-      </div>
     </div>
   )
 }
