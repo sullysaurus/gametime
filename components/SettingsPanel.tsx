@@ -172,6 +172,7 @@ export default function SettingsPanel({
   sectionCode,
   rowInfo
 }: Props) {
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
   const isUltra = settings.model === 'flux-pro-1.1-ultra'
   const isKontext = settings.model.includes('kontext')
   const isDev = settings.model === 'flux-dev'
@@ -179,10 +180,12 @@ export default function SettingsPanel({
   const supportsReferenceImage = isUltra || isKontext
 
   const updateSetting = <K extends keyof GenerationSettings>(key: K, value: GenerationSettings[K]) => {
+    setSelectedPresetId(null) // Clear preset selection when manually adjusting settings
     onSettingsChange({ ...settings, [key]: value })
   }
 
   const applyPreset = (preset: Preset) => {
+    setSelectedPresetId(preset.id)
     onSettingsChange({ ...settings, ...preset.settings })
     if (onPresetApplied) {
       // Build section description
@@ -228,20 +231,36 @@ export default function SettingsPanel({
           Uses Kontext Max for img2img with section details automatically included.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {CONCERT_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              onClick={() => applyPreset(preset)}
-              className="text-left p-3 bg-black/40 hover:bg-black/60 border border-purple-600/30 hover:border-purple-500 rounded-lg transition-all group"
-            >
-              <div className="font-medium text-sm mb-1 group-hover:text-purple-300">
-                {preset.name}
-              </div>
-              <div className="text-xs text-gray-400">
-                {preset.description}
-              </div>
-            </button>
-          ))}
+          {CONCERT_PRESETS.map((preset) => {
+            const isSelected = selectedPresetId === preset.id
+            return (
+              <button
+                key={preset.id}
+                onClick={() => applyPreset(preset)}
+                className={`text-left p-3 rounded-lg transition-all group relative ${
+                  isSelected
+                    ? 'bg-purple-600/40 border-2 border-purple-400 shadow-lg shadow-purple-500/50'
+                    : 'bg-black/40 hover:bg-black/60 border border-purple-600/30 hover:border-purple-500'
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute top-2 right-2 bg-purple-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                    ✓
+                  </div>
+                )}
+                <div className={`font-medium text-sm mb-1 ${
+                  isSelected ? 'text-purple-200' : 'group-hover:text-purple-300'
+                }`}>
+                  {preset.name}
+                </div>
+                <div className={`text-xs ${
+                  isSelected ? 'text-purple-300' : 'text-gray-400'
+                }`}>
+                  {preset.description}
+                </div>
+              </button>
+            )
+          })}
         </div>
 
         {/* Focus Area Selector */}
