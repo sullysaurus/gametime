@@ -440,105 +440,126 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Detail Panel - Slides in from left */}
+        {/* Modal Backdrop */}
         {selectedSection && (
-          <div className="absolute inset-y-0 left-0 w-full md:w-[650px] bg-[#1a1a1a] border-r border-gray-700 z-50 overflow-y-auto animate-slide-in">
-            {/* Back Button */}
-            <div className="p-4">
-              <button
-                onClick={() => setSelectedSection(null)}
-                className="text-gray-400 hover:text-white flex items-center gap-2 mb-4"
-              >
-                <span>←</span>
-              </button>
+          <div
+            className="fixed inset-0 bg-black/60 z-50 animate-fadeIn"
+            onClick={() => setSelectedSection(null)}
+          />
+        )}
 
-              <h2 className="text-lg font-bold mb-2">{selectedSection.name}</h2>
-              <p className="text-sm text-gray-400 mb-4">Red Rocks Amphitheatre</p>
+        {/* Detail Modal - Slides up from bottom */}
+        {selectedSection && (
+          <div className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 pointer-events-none">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto bg-[#1a1a1a] md:rounded-2xl overflow-hidden md:max-w-2xl md:w-full md:mx-4 md:max-h-[90vh] animate-slideUp md:animate-scaleIn shadow-2xl"
+            >
+              {/* Header with Close Button */}
+              <div className="sticky top-0 bg-[#1a1a1a] border-b border-gray-800 px-4 py-3 flex items-center justify-between z-10">
+                <div>
+                  <h2 className="text-lg font-bold">{selectedSection.name}</h2>
+                  <p className="text-xs text-gray-400">Red Rocks Amphitheatre</p>
+                </div>
+                <button
+                  onClick={() => setSelectedSection(null)}
+                  className="text-gray-400 hover:text-white p-2 hover:bg-gray-800 rounded-full transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
 
-              {/* Large Image */}
-              <div className="relative w-full aspect-video min-h-[200px] bg-gray-800 rounded-lg overflow-hidden mb-4">
-                {selectedSection.display_image_url ? (
-                  <Image
-                    src={selectedSection.display_image_url}
-                    alt={selectedSection.name}
-                    fill
-                    className="object-cover"
-                    
-                    sizes="(max-width: 768px) 100vw, 600px"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-600">
-                    No image
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto max-h-[70vh] md:max-h-[calc(90vh-140px)]">
+                <div className="p-4">
+                  {/* Image */}
+                  <div className="relative w-full aspect-video bg-gray-800 rounded-lg overflow-hidden mb-4">
+                    {selectedSection.display_image_url ? (
+                      <Image
+                        src={selectedSection.display_image_url}
+                        alt={selectedSection.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+                        No image
+                      </div>
+                    )}
+
+                    {/* Deal Badge */}
+                    {selectedSection.deal_badge && (
+                      <div className="absolute top-2 left-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-bold ${
+                            selectedSection.deal_badge === 'cheapest'
+                              ? 'bg-pink-600'
+                              : 'bg-green-600'
+                          }`}
+                        >
+                          {selectedSection.deal_badge === 'cheapest' ? '🔥 CHEAPEST' : '⭐ AMAZING DEAL'}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {/* Deal Badge */}
-                {selectedSection.deal_badge && (
-                  <div className="absolute top-2 left-2">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-bold ${
-                        selectedSection.deal_badge === 'cheapest'
-                          ? 'bg-pink-600'
-                          : 'bg-green-600'
-                      }`}
-                    >
-                      {selectedSection.deal_badge === 'cheapest' ? '🔥 CHEAPEST' : '⭐ AMAZING DEAL'}
-                    </span>
+                  {/* Price */}
+                  <div className="mb-4">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-3xl font-bold">${selectedSection.price}</span>
+                      <span className="text-sm text-gray-400">/ea · Includes Fees</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {selectedSection.section_code} · {selectedSection.row_info || 'Row GA'}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Date & Tickets */}
-              <div className="flex items-center gap-3 mb-4 text-sm">
-                <div className="flex items-center gap-2 bg-gray-900 px-3 py-2 rounded">
-                  <span>📅</span>
-                  <span>Fri 6/3/26 · 8:00 PM</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-900 px-3 py-2 rounded">
-                  <span>👥</span>
-                  <span>2</span>
-                </div>
-              </div>
+                  {/* Date & Tickets */}
+                  <div className="flex items-center gap-2 mb-4 text-sm">
+                    <div className="flex items-center gap-2 bg-gray-900 px-3 py-2 rounded flex-1">
+                      <span>📅</span>
+                      <span className="text-xs">Fri 6/3/26 · 8:00 PM</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-900 px-3 py-2 rounded">
+                      <span>👥</span>
+                      <span className="text-xs">2</span>
+                    </div>
+                  </div>
 
-              {/* Price */}
-              <div className="mb-4">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-3xl font-bold">${selectedSection.price}</span>
-                  <span className="text-sm text-gray-400">/ea</span>
-                </div>
-                <div className="text-xs text-gray-400">Includes Fees</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  4 interest-free payments or as low as $29/mo with Affirm
-                </div>
-              </div>
+                  {/* Section Details */}
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-start gap-3 text-sm">
+                      <span className="text-gray-400">🎫</span>
+                      <div>
+                        <div className="font-semibold">2 Seats Together</div>
+                        <div className="text-xs text-gray-400">
+                          {selectedSection.section_code} · {selectedSection.row_info || 'Row GA'}
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Section Details */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-start gap-3">
-                  <span className="text-gray-400">🎫</span>
-                  <div>
-                    <div className="font-semibold text-sm">2 Seats Together</div>
-                    <div className="text-xs text-gray-400">
-                      Selected from seats {selectedSection.section_code} · {selectedSection.row_info || 'Row GA'}
+                    <div className="flex items-start gap-3 text-sm">
+                      <span className="text-gray-400">✓</span>
+                      <div>
+                        <div className="font-semibold">Best Price Guarantee</div>
+                        <div className="text-xs text-gray-400">
+                          110% refund if you find it cheaper elsewhere
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="text-gray-400">✓</span>
-                  <div>
-                    <div className="font-semibold text-sm">Gametime Best Price Guarantee</div>
-                    <div className="text-xs text-gray-400">
-                      If you find a seat for less on any site (before fees), we'll refund 110% of the difference
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* Continue Button */}
-              <button className="w-full py-3 bg-green-500 hover:bg-green-600 rounded-lg font-bold transition-colors">
-                Continue
-              </button>
+              {/* Fixed Footer with Continue Button */}
+              <div className="sticky bottom-0 bg-[#1a1a1a] border-t border-gray-800 p-4">
+                <button className="w-full py-3 bg-green-500 hover:bg-green-600 rounded-lg font-bold transition-colors">
+                  Continue
+                </button>
+              </div>
             </div>
           </div>
         )}
