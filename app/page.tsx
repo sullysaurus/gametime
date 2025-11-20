@@ -96,7 +96,7 @@ export default function HomePage() {
     }
 
     const hydrated: Section[] = (sectionsData || []).map((section: any) => {
-      // Priority: approved AI images > uploaded primary image > pending AI images > local photos
+      // Priority: uploaded primary image > approved AI images > pending AI images > local photos
       let displayImageUrl: string | null = null
       let displayImageStatus: Section['display_image_status'] = 'current'
 
@@ -116,16 +116,16 @@ export default function HomePage() {
         displayImageStatus = 'pending'
       }
 
-      // Uploaded primary image overrides pending (user intentionally set this)
-      if (section.current_image_url) {
-        displayImageUrl = section.current_image_url
-        displayImageStatus = 'current'
-      }
-
-      // Approved AI images override everything (highest quality, reviewed)
+      // Approved AI images override pending (high quality, reviewed)
       if (approved) {
         displayImageUrl = approved.image_url
         displayImageStatus = 'approved'
+      }
+
+      // Uploaded primary image has highest priority (user's explicit choice)
+      if (section.current_image_url) {
+        displayImageUrl = section.current_image_url
+        displayImageStatus = 'current'
       }
 
       return {
