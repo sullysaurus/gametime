@@ -166,60 +166,49 @@ async function generateWithBFL(payload: GenerateImagePayload): Promise<string> {
       const arrayBuffer = await imageResponse.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
 
-      // Try to use Supabase Storage if service role key is configured
-      if (supabaseAdmin) {
-        try {
-          console.log('Compressing image to WebP...')
-
-          // Compress image to WebP for optimal performance
-          // 80% quality provides excellent visual quality with ~60% size reduction
-          const compressedImage = await sharp(buffer)
-            .webp({ quality: 80 })
-            .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
-            .toBuffer()
-
-          // Upload to Supabase Storage using service role (has full permissions)
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-          const filePath = `generated/${fileName}`
-
-          console.log(`Uploading image to storage: ${filePath}`)
-
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from('generated-images')
-            .upload(filePath, compressedImage, {
-              contentType: 'image/webp',
-              cacheControl: '31536000', // 1 year cache
-              upsert: false
-            })
-
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError)
-            throw new Error(`Storage upload failed: ${uploadError.message}`)
-          }
-
-          console.log(`Image uploaded successfully: ${filePath}`)
-
-          // Get public URL
-          const { data: { publicUrl } } = supabaseAdmin.storage
-            .from('generated-images')
-            .getPublicUrl(filePath)
-
-          console.log(`Public URL: ${publicUrl}`)
-
-          return publicUrl
-        } catch (storageError) {
-          console.error('Storage upload failed, falling back to base64:', storageError)
-          // Fall through to base64 fallback below
-        }
-      } else {
-        console.warn('SUPABASE_SERVICE_ROLE_KEY not configured, using base64 fallback')
+      // Require Supabase Storage - no base64 fallback
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured. Image storage is required.')
       }
 
-      // Fallback to base64 if storage upload fails or service key not configured
-      console.log('Using base64 fallback...')
-      const base64 = Buffer.from(buffer).toString('base64')
-      const mimeType = payload.output_format === 'png' ? 'image/png' : 'image/jpeg'
-      return `data:${mimeType};base64,${base64}`
+      console.log('Compressing image to WebP...')
+
+      // Compress image to WebP for optimal performance
+      // 80% quality provides excellent visual quality with ~60% size reduction
+      const compressedImage = await sharp(buffer)
+        .webp({ quality: 80 })
+        .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer()
+
+      // Upload to Supabase Storage using service role (has full permissions)
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+      const filePath = `generated/${fileName}`
+
+      console.log(`Uploading image to storage: ${filePath}`)
+
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('generated-images')
+        .upload(filePath, compressedImage, {
+          contentType: 'image/webp',
+          cacheControl: '31536000', // 1 year cache
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError)
+        throw new Error(`Storage upload failed: ${uploadError.message}`)
+      }
+
+      console.log(`Image uploaded successfully: ${filePath}`)
+
+      // Get public URL
+      const { data: { publicUrl } } = supabaseAdmin.storage
+        .from('generated-images')
+        .getPublicUrl(filePath)
+
+      console.log(`Public URL: ${publicUrl}`)
+
+      return publicUrl
     }
 
     if (result.status === 'Error' || result.status === 'Failed') {

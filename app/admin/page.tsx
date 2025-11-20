@@ -351,35 +351,29 @@ export default function AdminPage() {
 
   async function handleUploadSectionImage(sectionId: string, file: File) {
     try {
-      // Convert file to base64 for now (will use storage when service key is configured)
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64 = reader.result as string
+      // Upload directly to Supabase Storage (no base64)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('sectionId', sectionId)
 
-        // Update the section with the new image
-        const { error } = await (supabase as any)
-          .from('sections')
-          .update({ current_image_url: base64 })
-          .eq('id', sectionId)
+      const response = await fetch('/api/upload-section-image', {
+        method: 'POST',
+        body: formData
+      })
 
-        if (error) {
-          console.error('Error uploading section image:', error)
-          alert('Failed to upload image')
-          return
-        }
+      const data = await response.json()
 
-        // Reload sections to refresh the carousel
-        await loadSections()
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed')
       }
 
-      reader.onerror = () => {
-        alert('Failed to read file')
-      }
+      alert('Image uploaded successfully!')
 
-      reader.readAsDataURL(file)
+      // Reload sections to refresh the carousel
+      await loadSections()
     } catch (err) {
       console.error('Error uploading section image:', err)
-      alert('Failed to upload image')
+      alert('Failed to upload image: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 

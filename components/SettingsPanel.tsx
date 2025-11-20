@@ -10,44 +10,11 @@ type Props = {
 
 export default function SettingsPanel({ defaultModel = 'flux-pro-1.1', onModelChange }: Props) {
   const [selectedModel, setSelectedModel] = useState(defaultModel)
-  const [migrationStatus, setMigrationStatus] = useState<any>(null)
-  const [migrating, setMigrating] = useState(false)
   const [storageTest, setStorageTest] = useState<any>(null)
 
   const handleModelChange = (model: string) => {
     setSelectedModel(model)
     onModelChange?.(model)
-  }
-
-  async function checkMigrationStatus() {
-    try {
-      const response = await fetch('/api/migrate-images-to-storage')
-      const data = await response.json()
-      setMigrationStatus(data)
-    } catch (error) {
-      console.error('Failed to check migration status:', error)
-    }
-  }
-
-  async function runMigration() {
-    if (!confirm('Migrate all base64 images to Supabase Storage? This will process 10 images at a time.')) {
-      return
-    }
-
-    setMigrating(true)
-    try {
-      const response = await fetch('/api/migrate-images-to-storage', {
-        method: 'POST'
-      })
-      const data = await response.json()
-      alert(`Migration complete: ${data.migrated} images migrated, ${data.failed} failed`)
-      await checkMigrationStatus()
-    } catch (error) {
-      console.error('Migration failed:', error)
-      alert('Migration failed')
-    } finally {
-      setMigrating(false)
-    }
   }
 
   async function testStorage() {
@@ -160,17 +127,16 @@ export default function SettingsPanel({ defaultModel = 'flux-pro-1.1', onModelCh
         </Collapsible>
       </div>
 
-      {/* Storage & Migration */}
+      {/* Storage Status */}
       <Collapsible
-        title="🗄️ Storage & Migration"
-        description="Manage image storage"
+        title="🗄️ Storage Status"
+        description="Check Supabase Storage connection"
         defaultOpen={false}
       >
         <div className="space-y-3">
-          {/* Storage Test */}
           <div className="bg-gray-800 rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Storage Status</span>
+              <span className="text-sm font-medium">Connection Test</span>
               <button
                 onClick={testStorage}
                 className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors"
@@ -182,43 +148,10 @@ export default function SettingsPanel({ defaultModel = 'flux-pro-1.1', onModelCh
             {storageTest && (
               <div className="text-xs">
                 <div className={storageTest.success ? 'text-green-400' : 'text-red-400'}>
-                  {storageTest.success ? '✅ Working' : '❌ Failed'}
+                  {storageTest.success ? '✅ Storage is working' : '❌ Storage connection failed'}
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Migration */}
-          <div className="bg-gray-800 rounded-lg p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Migration</span>
-              <button
-                onClick={checkMigrationStatus}
-                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-              >
-                Check
-              </button>
-            </div>
-
-            {migrationStatus && (
-              <div className="text-xs space-y-2">
-                <div className="flex justify-between text-gray-400">
-                  <span>Base64:</span>
-                  <span className="font-bold text-yellow-400">{migrationStatus.base64 || 0}</span>
-                </div>
-                <div className="flex justify-between text-gray-400">
-                  <span>Storage:</span>
-                  <span className="font-bold text-green-400">{migrationStatus.storage || 0}</span>
-                </div>
-
-                {migrationStatus.needsMigration && (
-                  <button
-                    onClick={runMigration}
-                    disabled={migrating}
-                    className="w-full px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded text-xs font-medium transition-colors"
-                  >
-                    {migrating ? 'Migrating...' : `Migrate ${migrationStatus.base64}`}
-                  </button>
+                {storageTest.recommendation && (
+                  <div className="text-gray-400 mt-2">{storageTest.recommendation}</div>
                 )}
               </div>
             )}

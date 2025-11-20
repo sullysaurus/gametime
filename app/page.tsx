@@ -316,7 +316,7 @@ export default function HomePage() {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
-                          unoptimized={section.display_image_url.startsWith('data:')}
+                          
                           sizes="(max-width: 768px) 160px, 256px"
                         />
                       ) : (
@@ -387,7 +387,7 @@ export default function HomePage() {
                         fill
                         className="object-cover"
                         loading="lazy"
-                        unoptimized={section.display_image_url.startsWith('data:')}
+                        
                         sizes="45vw"
                       />
                     ) : (
@@ -463,7 +463,7 @@ export default function HomePage() {
                     alt={selectedSection.name}
                     fill
                     className="object-cover"
-                    unoptimized={selectedSection.display_image_url.startsWith('data:')}
+                    
                     sizes="(max-width: 768px) 100vw, 600px"
                   />
                 ) : (
