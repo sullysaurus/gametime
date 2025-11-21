@@ -184,31 +184,29 @@ export default function PhotoBacklog({ sections }: PhotoBacklogProps) {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold mb-4">Upload Photos to Backlog</h2>
         <div className="flex items-center gap-4">
-          <label className="flex-1">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="hidden"
-              id="photo-upload"
-            />
-            <div
-              className={`
-                border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-                ${uploading ? 'border-gray-600 bg-gray-700' : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700'}
-              `}
-              onClick={() => document.getElementById('photo-upload')?.click()}
-            >
-              {uploading ? (
-                <div className="text-gray-400">Uploading...</div>
-              ) : (
-                <>
-                  <div className="text-gray-300 font-medium">Click to upload photo</div>
-                  <div className="text-gray-500 text-sm mt-1">or drag and drop</div>
-                </>
-              )}
-            </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className="hidden"
+            id="photo-upload"
+          />
+          <label
+            htmlFor="photo-upload"
+            className={`
+              flex-1 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+              ${uploading ? 'border-gray-600 bg-gray-700' : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700'}
+            `}
+          >
+            {uploading ? (
+              <div className="text-gray-400">Uploading...</div>
+            ) : (
+              <>
+                <div className="text-gray-300 font-medium">Click to upload photo</div>
+                <div className="text-gray-500 text-sm mt-1">or drag and drop</div>
+              </>
+            )}
           </label>
         </div>
         <div className="mt-4 text-sm text-gray-400">
@@ -224,9 +222,9 @@ export default function PhotoBacklog({ sections }: PhotoBacklogProps) {
       </div>
 
       {/* Photo Grid and Detail View */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Photo Grid */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:col-span-2">
           <h3 className="text-lg font-semibold">Photos</h3>
           {photos.length === 0 ? (
             <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
@@ -234,7 +232,7 @@ export default function PhotoBacklog({ sections }: PhotoBacklogProps) {
               <div className="text-gray-500 text-sm mt-1">Upload some photos to get started</div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {photos.map((photo) => (
                 <div
                   key={photo.id}
