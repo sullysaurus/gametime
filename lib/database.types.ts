@@ -126,6 +126,47 @@ export interface Database {
           created_at?: string
         }
       }
+      photo_backlog: {
+        Row: {
+          id: string
+          image_url: string
+          thumbnail_url: string | null
+          original_filename: string | null
+          file_size: number | null
+          width: number | null
+          height: number | null
+          notes: string | null
+          tags: string[] | null
+          uploaded_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          image_url: string
+          thumbnail_url?: string | null
+          original_filename?: string | null
+          file_size?: number | null
+          width?: number | null
+          height?: number | null
+          notes?: string | null
+          tags?: string[] | null
+          uploaded_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          image_url?: string
+          thumbnail_url?: string | null
+          original_filename?: string | null
+          file_size?: number | null
+          width?: number | null
+          height?: number | null
+          notes?: string | null
+          tags?: string[] | null
+          uploaded_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

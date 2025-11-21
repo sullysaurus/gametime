@@ -12,6 +12,7 @@ import SectionImageManager from '@/components/SectionImageManager'
 import SectionCarousel from '@/components/SectionCarousel'
 import Collapsible from '@/components/Collapsible'
 import SettingsPanel, { type GenerationSettings } from '@/components/SettingsPanel'
+import PhotoBacklog from '@/components/PhotoBacklog'
 
 type Section = {
   id: string
@@ -94,7 +95,7 @@ function sortSectionsFrontToBack(sections: Section[]): Section[] {
 
 export default function AdminPage() {
   // Tab state
-  const [activeTab, setActiveTab] = useState<'generate' | 'prompts' | 'images'>('generate')
+  const [activeTab, setActiveTab] = useState<'sections' | 'backlog'>('sections')
 
   // Section state
   const [sections, setSections] = useState<Section[]>([])
@@ -422,17 +423,46 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Section Carousel - Full Width */}
-        <div className="mb-6">
-          <SectionCarousel
-            sections={sections}
-            selectedSection={selectedSection}
-            onSelectSection={setSelectedSection}
-            onDeleteImage={handleDeleteSectionImage}
-            onUploadImage={handleUploadSectionImage}
-            onUseAsReference={handleUseAsReference}
-          />
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-800">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('sections')}
+              className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+                activeTab === 'sections'
+                  ? 'border-blue-500 text-blue-500'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Sections & Generation
+            </button>
+            <button
+              onClick={() => setActiveTab('backlog')}
+              className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+                activeTab === 'backlog'
+                  ? 'border-blue-500 text-blue-500'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Photo Backlog
+            </button>
+          </div>
         </div>
+
+        {/* Sections Tab Content */}
+        {activeTab === 'sections' && (
+          <>
+            {/* Section Carousel - Full Width */}
+            <div className="mb-6">
+              <SectionCarousel
+                sections={sections}
+                selectedSection={selectedSection}
+                onSelectSection={setSelectedSection}
+                onDeleteImage={handleDeleteSectionImage}
+                onUploadImage={handleUploadSectionImage}
+                onUseAsReference={handleUseAsReference}
+              />
+            </div>
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -565,6 +595,13 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+          </>
+        )}
+
+        {/* Backlog Tab Content */}
+        {activeTab === 'backlog' && (
+          <PhotoBacklog sections={sections} />
+        )}
       </div>
     </div>
   )
