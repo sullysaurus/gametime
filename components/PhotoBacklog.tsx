@@ -45,7 +45,22 @@ export default function PhotoBacklog({ sections }: PhotoBacklogProps) {
     try {
       const response = await fetch('/api/backlog');
       const data = await response.json();
-      setPhotos(data.photos || []);
+      const loadedPhotos = data.photos || [];
+      setPhotos(loadedPhotos);
+
+      // Auto-select first photo if there are photos and either:
+      // 1. No photo is selected, OR
+      // 2. The currently selected photo no longer exists in the list
+      if (loadedPhotos.length > 0) {
+        const currentPhotoStillExists = selectedPhoto && loadedPhotos.some((p: BacklogPhoto) => p.id === selectedPhoto.id);
+
+        if (!selectedPhoto || !currentPhotoStillExists) {
+          const firstPhoto = loadedPhotos[0];
+          setSelectedPhoto(firstPhoto);
+          setNotesValue(firstPhoto.notes || '');
+          setTagsValue(firstPhoto.tags?.join(', ') || '');
+        }
+      }
     } catch (error) {
       console.error('Error loading backlog photos:', error);
     } finally {
